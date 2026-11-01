@@ -69,7 +69,7 @@ function Ticket({ code }) {
     try {
       const r = await fetch(`/api/orders/${code}`, { cache: 'no-store' });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.error || 'Pesanan tidak ditemukan.'); return; }
+      if (!r.ok) { setO(null); setErr(d.error || 'Pesanan tidak ditemukan.'); return; }
       setO(d.order); setWaLink(d.waUrl); setErr(''); setAt(Date.now());
     } catch { setErr('Tidak bisa terhubung. Periksa koneksi lalu coba lagi.'); }
   }, [code]);
@@ -167,7 +167,7 @@ function Ticket({ code }) {
       </section>
 
       <div className="flex flex-col gap-3">
-        {waLink && (
+        {waLink && o.status === 'baru' && (
           <a href={waLink} target="_blank" rel="noopener noreferrer" className="btn btn-wa">Kirim pesanan ke WhatsApp</a>
         )}
         <a href="/" className="btn btn-ghost">Pesan lagi</a>
