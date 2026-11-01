@@ -227,26 +227,18 @@ function PaymentPanel({ o, code, reload, waLink }) {
     setBusy(false);
   }
 
-  async function sendToWhatsApp() {
-    if (!file || busy) return;
+  async function shareProof() {
+    if (!o.hasProof || busy) return;
     const text = proofMessage(o);
-    if (navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], text });
-        setMsg('Foto dan detail pesanan siap dikirim melalui WhatsApp.');
-        return;
-      } catch {
-        setMsg('Pengiriman dibatalkan. Pilih file lalu coba lagi.');
-        return;
-      }
-    }
     const number = waNumber(waLink);
     if (!number) {
       setMsg('WhatsApp seller belum tersedia.');
       return;
     }
+    // wa.me tidak dapat melampirkan file; foto sudah tampil di dashboard penjual.
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-    setMsg('WhatsApp dibuka dengan detail pesanan. Lampirkan foto yang dipilih lalu kirim.');
+    fetch(`/api/orders/${code}/proof-notify`, { method: 'POST', keepalive: true }).catch(() => {});
+    setMsg('Detail pesanan dibuka di WhatsApp. Foto sudah tampil di dashboard penjual; bila perlu, lampirkan foto dari galeri di chat.');
   }
 
   return (
@@ -287,13 +279,15 @@ function PaymentPanel({ o, code, reload, waLink }) {
             <p className="mt-1 text-xs text-ink-2">JPG, PNG, atau WebP, maksimal 4 MB.</p>
           </div>
           {preview && <img src={preview} alt="Pratinjau bukti pembayaran" className="max-h-64 w-full rounded-2xl object-contain bg-paper" />}
-          <div className="grid gap-2 sm:grid-cols-2">
-            <button type="submit" className="btn" disabled={!file || busy}>{busy ? 'Mengirim bukti…' : 'Kirim ke website'}</button>
-            <button type="button" onClick={sendToWhatsApp} className="btn btn-ghost" disabled={!file || busy}>Kirim foto + detail ke WhatsApp</button>
-          </div>
-          <p className="text-xs text-ink-2">Pilih salah satu cara pengiriman. WhatsApp akan menyertakan foto dan detail pesanan bila perangkat mendukung berbagi file.</p>
+          <button type="submit" className="btn" disabled={!file || busy}>{busy ? 'Mengirim bukti…' : 'Kirim bukti ke website'}</button>
           {msg && <p role="alert" className="text-sm font-semibold text-ink">{msg}</p>}
         </form>
+      )}
+      {!verified && o.hasProof && (
+        <div className="space-y-2 border-t border-line pt-4">
+          <button type="button" onClick={shareProof} className="btn btn-ghost w-full">Kirim detail pesanan ke WhatsApp penjual</button>
+          <p className="text-xs text-ink-2">Foto sudah tampil di dashboard penjual. WhatsApp tidak bisa melampirkan foto otomatis; bila perlu, lampirkan foto dari galeri di chat.</p>
+        </div>
       )}
     </section>
   );
