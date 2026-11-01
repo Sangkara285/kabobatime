@@ -28,7 +28,7 @@ export async function PATCH(req, { params }) {
     if (b.status !== undefined) {
       if (!STATUSES.includes(b.status)) return err('Status tidak valid.', 400);
       if (b.status === 'baru') {
-        await pool().query('UPDATE orders SET status = ?, accepted_at = NULL, ready_at = NULL, completed_at = NULL WHERE id = ?', [b.status, o.id]);
+        await pool().query('UPDATE orders SET status = ?, accepted_at = NULL, ready_at = NULL, completed_at = NULL, courier_id = NULL WHERE id = ?', [b.status, o.id]);
       } else if (b.status === 'diproses') {
         await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = NULL, completed_at = NULL WHERE id = ?', [b.status, o.id]);
       } else if (b.status === 'siap') {
