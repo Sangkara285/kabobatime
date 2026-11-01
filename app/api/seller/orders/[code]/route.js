@@ -27,7 +27,7 @@ export async function PATCH(req, { params }) {
 
     if (b.status !== undefined) {
       if (!STATUSES.includes(b.status)) return err('Status tidak valid.', 400);
-      if (b.status === 'selesai') await pool().query('UPDATE orders SET status = ?, completed_at = COALESCE(completed_at, UTC_TIMESTAMP()) WHERE id = ?', [b.status, o.id]);
+      if (b.status === 'selesai') await pool().query('UPDATE orders SET status = ?, completed_at = COALESCE(completed_at, NOW()) WHERE id = ?', [b.status, o.id]);
       else await pool().query('UPDATE orders SET status = ?, completed_at = NULL WHERE id = ?', [b.status, o.id]);
     }
 

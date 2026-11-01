@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS orders (
   payment_proof_at DATETIME NULL,
   payment_reject_note VARCHAR(160) NULL,
   completed_at DATETIME NULL,
+  wa_proof_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_status (status),
