@@ -30,6 +30,7 @@ export default function OrderDetail({ code }) {
   const [scale, setScale] = useState(150);
   const [copied, setCopied] = useState(false);
   const [cashReceived, setCashReceived] = useState('');
+  const [couriers, setCouriers] = useState([]);
 
   const load = useCallback(async () => {
     const r = await api(`/api/seller/orders/${code}`);
@@ -40,6 +41,7 @@ export default function OrderDetail({ code }) {
   }, [code]);
 
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [load]);
+  useEffect(() => { api('/api/seller/couriers').then((r) => r.ok && setCouriers(r.data.couriers || [])); }, []);
 
   useEffect(() => {
     if (!zoom) return undefined;
@@ -156,6 +158,15 @@ export default function OrderDetail({ code }) {
       </section>
 
       <section className="card space-y-4 p-5" aria-label="Pembayaran">
+        {o.mode === 'antar' && (
+          <div>
+            <label htmlFor="courier" className="mb-1.5 block font-semibold">Kurir</label>
+            <select id="courier" className="field" value={o.courierId || ''} onChange={(e) => act({ courier_id: e.target.value }, 'Penugasan kurir disimpan')}>
+              <option value="">Belum ditugaskan</option>
+              {couriers.filter((c) => c.active).map((c) => <option key={c.id} value={c.id}>{c.name} ({c.username})</option>)}
+            </select>
+          </div>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-bold">Pembayaran: {o.payment}</h2>
           {hasPay && <span className={`rounded-full px-3 py-1 text-sm font-bold ${PAYBADGE[o.paymentStatus]}`}>{PAYTEXT[o.paymentStatus]}</span>}

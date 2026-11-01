@@ -22,7 +22,7 @@ export async function PATCH(req, { params }) {
   const code = String(params.code).toUpperCase();
   const b = await req.json().catch(() => ({}));
   try {
-    const [[o]] = await pool().query('SELECT id, payment, total, payment_proof, payment_status FROM orders WHERE code = ?', [code]);
+    const [[o]] = await pool().query('SELECT id, payment, total, payment_proof, payment_status, courier_id FROM orders WHERE code = ?', [code]);
     if (!o) return err('Pesanan tidak ditemukan.', 404);
 
     if (b.status !== undefined) {
@@ -48,6 +48,16 @@ export async function PATCH(req, { params }) {
         "UPDATE orders SET cash_received = ?, cash_change = ?, cash_paid_at = NOW(), payment_status = ?, payment_reject_note = NULL WHERE id = ?",
         [received, received - o.total, ['pending', 'verified', 'rejected'].includes(o.payment_status) ? 'verified' : 'terverifikasi', o.id],
       );
+    }
+
+    if (b.courier_id !== undefined) {
+      const courierId = b.courier_id === null || b.courier_id === '' ? null : Number(b.courier_id);
+      if (courierId !== null && !Number.isInteger(courierId)) return err('Kurir tidak valid.', 400);
+      if (courierId !== null) {
+        const [[courier]] = await pool().query('SELECT id FROM couriers WHERE id = ? AND active = 1', [courierId]);
+        if (!courier) return err('Kurir tidak ditemukan atau tidak aktif.', 400);
+      }
+      await pool().query('UPDATE orders SET courier_id = ? WHERE id = ?', [courierId, o.id]);
     }
 
     return NextResponse.json({ ok: true, order: await loadOrder(code, { seller: true }) }, { headers: NO_STORE });

@@ -340,6 +340,7 @@ export function SettingsAdmin({ notify }) {
         <Field id="s-wa" label="Nomor WhatsApp penjual" inputMode="numeric" value={f.wa_number} onChange={set('wa_number')} hint="Format 62..., tanpa tanda + dan spasi. Pesanan pelanggan dikirim ke nomor ini." />
         <Field id="s-open" label="Jam buka (opsional)" value={f.open_hours.trim()} onChange={set('open_hours')} placeholder="10.00 - 21.00" />
       </section>
+      <CouriersAdmin notify={notify} />
       <section className="card space-y-4 p-5">
         <h2 className="text-lg font-bold">Lokasi outlet dan ongkir</h2>
         <div className="grid grid-cols-2 gap-3">
@@ -358,5 +359,54 @@ export function SettingsAdmin({ notify }) {
       {err && <p role="alert" className="rounded-xl bg-warn-soft p-3 text-warn-text">{err}</p>}
       <button className="btn" disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan pengaturan'}</button>
     </form>
+  );
+}
+
+function CouriersAdmin({ notify }) {
+  const [couriers, setCouriers] = useState([]);
+  const [form, setForm] = useState({ name: '', username: '', password: '', phone: '' });
+  const [reset, setReset] = useState({});
+  const [error, setError] = useState('');
+  const load = useCallback(async () => { const r = await api('/api/seller/couriers'); if (r.ok) setCouriers(r.data.couriers || []); }, []);
+  useEffect(() => { load(); }, [load]);
+  async function add() {
+    setError('');
+    const r = await api('/api/seller/couriers', 'POST', form);
+    if (!r.ok) { setError(r.data.error || 'Akun belum bisa dibuat.'); return; }
+    setForm({ name: '', username: '', password: '', phone: '' }); notify('Akun kurir dibuat'); load();
+  }
+  async function patch(id, body, message) {
+    const r = await api(`/api/seller/couriers/${id}`, 'PATCH', body);
+    if (!r.ok) { setError(r.data.error || 'Perubahan belum tersimpan.'); return; }
+    setReset((x) => ({ ...x, [id]: '' })); notify(message); load();
+  }
+  return (
+    <section className="card space-y-4 p-5">
+      <h2 className="text-lg font-bold">Akun kurir</h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field id="courier-name" label="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <Field id="courier-username" label="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+        <Field id="courier-password" label="Password awal (min. 8 karakter)" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" />
+        <Field id="courier-phone" label="Telepon (opsional)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+      </div>
+      {error && <p role="alert" className="rounded-xl bg-warn-soft p-3 text-warn-text">{error}</p>}
+      <button type="button" className="btn" onClick={add} disabled={!form.name || !form.username || form.password.length < 8}>Tambah kurir</button>
+      <ul className="divide-y divide-line rounded-xl ring-1 ring-line">
+        {couriers.map((c) => (
+          <li key={c.id} className="space-y-2 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span><b>{c.name}</b> · <span className="font-mono">{c.username}</span>{c.phone && ` · ${c.phone}`}</span>
+              <span className={`rounded-full px-2 py-1 text-xs font-bold ${c.active ? 'bg-leaf-soft text-leaf' : 'bg-paper text-ink-2'}`}>{c.active ? 'Aktif' : 'Nonaktif'}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => patch(c.id, { active: !c.active }, c.active ? 'Kurir dinonaktifkan' : 'Kurir diaktifkan')}>{c.active ? 'Nonaktifkan' : 'Aktifkan'}</button>
+              <input className="field max-w-xs" type="password" placeholder="Password baru (min. 8)" value={reset[c.id] || ''} onChange={(e) => setReset({ ...reset, [c.id]: e.target.value })} autoComplete="new-password" />
+              <button type="button" className="btn btn-ghost btn-sm" disabled={(reset[c.id] || '').length < 8} onClick={() => patch(c.id, { password: reset[c.id] }, 'Password kurir direset')}>Reset password</button>
+            </div>
+          </li>
+        ))}
+        {!couriers.length && <li className="p-3 text-ink-2">Belum ada akun kurir.</li>}
+      </ul>
+    </section>
   );
 }
