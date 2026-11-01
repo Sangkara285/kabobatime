@@ -7,8 +7,9 @@ import ThemeToggle from '@/components/ThemeToggle';
 import FloatingDock from '@/components/FloatingDock';
 import { api, FILTERS, NEXT, BADGE, PAYBADGE, PAYTEXT, when, chatUrl } from './shared';
 import { ProductsAdmin, CategoriesAdmin, SettingsAdmin } from './SellerAdmin';
+import RevenueTab from './RevenueTab';
 
-const TABS = [['pesanan', 'Pesanan'], ['produk', 'Produk'], ['kategori', 'Kategori'], ['pengaturan', 'Pengaturan']];
+const TABS = [['pesanan', 'Pesanan'], ['rekap', 'Rekap'], ['produk', 'Produk'], ['kategori', 'Kategori'], ['pengaturan', 'Pengaturan']];
 const RANK = { baru: 0, diproses: 1, siap: 2, selesai: 3, batal: 4 };
 const gutter = { paddingLeft: 'max(16px, env(safe-area-inset-left))', paddingRight: 'max(16px, env(safe-area-inset-right))' };
 
@@ -58,6 +59,7 @@ export default function SellerApp() {
       </nav>
 
       {tab === 'pesanan' && <OrdersTab notify={notify} />}
+      {tab === 'rekap' && <RevenueTab />}
       {tab === 'produk' && <ProductsAdmin notify={notify} />}
       {tab === 'kategori' && <CategoriesAdmin notify={notify} />}
       {tab === 'pengaturan' && <SettingsAdmin notify={notify} />}
