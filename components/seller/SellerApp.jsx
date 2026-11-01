@@ -201,7 +201,6 @@ function OrdersTab({ notify }) {
                 {hasPay && (
                   <div className="flex flex-wrap gap-2 text-xs font-bold">
                     <span className={`rounded-full px-2.5 py-1 ${PAYBADGE[o.paymentStatus] || PAYBADGE.belum}`}>{o.payment}: {PAYTEXT[o.paymentStatus] || ''}</span>
-                    {o.waProofAt && <span className="rounded-full bg-sky-soft px-2.5 py-1 text-sky">Bukti dikirim lewat WhatsApp · {when(o.waProofAt)}</span>}
                   </div>
                 )}
                 {!hasPay && <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-bold ${o.cashPaidAt ? 'bg-leaf-soft text-leaf' : 'bg-paper text-ink-2 ring-1 ring-line'}`}>{o.cashPaidAt ? 'Tunai dicatat' : 'Tunai belum dicatat'}</span>}

@@ -134,7 +134,7 @@ function Ticket({ code }) {
       )}
 
       {o.payment !== 'Tunai' && !cancelled && (
-        <PaymentPanel o={o} code={code} reload={load} waLink={waLink} />
+        <PaymentPanel o={o} code={code} reload={load} />
       )}
 
       <section className="card p-6">
@@ -180,7 +180,7 @@ function Ticket({ code }) {
 }
 
 // Panel QRIS dan bukti pembayaran. Hanya tampil untuk pesanan QRIS.
-function PaymentPanel({ o, code, reload, waLink }) {
+function PaymentPanel({ o, code, reload }) {
   const [qrMissing, setQrMissing] = useState(false);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
@@ -228,20 +228,6 @@ function PaymentPanel({ o, code, reload, waLink }) {
     setBusy(false);
   }
 
-  async function shareProof() {
-    if (!o.hasProof || busy) return;
-    const text = proofMessage(o);
-    const number = waNumber(waLink);
-    if (!number) {
-      setMsg('WhatsApp seller belum tersedia.');
-      return;
-    }
-    // wa.me tidak dapat melampirkan file; foto sudah tampil di dashboard penjual.
-    window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-    fetch(`/api/orders/${code}/proof-notify`, { method: 'POST', keepalive: true }).catch(() => {});
-    setMsg('Detail pesanan dibuka di WhatsApp. Foto sudah tampil di dashboard penjual; bila perlu, lampirkan foto dari galeri di chat.');
-  }
-
   return (
     <section className="card space-y-4 p-6" aria-label="Pembayaran">
       <h2 className="text-lg font-bold">Pembayaran {o.payment}</h2>
@@ -264,7 +250,7 @@ function PaymentPanel({ o, code, reload, waLink }) {
       )}
 
       {verified && <p role="status" className="rounded-xl bg-leaf-soft p-3 font-semibold text-leaf">Pembayaranmu sudah terverifikasi. Terima kasih!</p>}
-      {o.paymentStatus === 'menunggu' && !verified && <p role="status" className="rounded-xl bg-sky-soft p-3 font-semibold text-sky">Bukti sudah dikirim dan menunggu verifikasi penjual.</p>}
+      {o.hasProof && o.paymentStatus === 'menunggu' && !verified && <p role="status" className="rounded-xl bg-sky-soft p-3 font-semibold text-sky">Bukti pembayaranmu sudah tersimpan di website dan menunggu verifikasi penjual. Tidak perlu mengirim bukti lagi lewat WhatsApp.</p>}
       {o.paymentStatus === 'ditolak' && <p role="alert" className="rounded-xl bg-warn-soft p-3 font-semibold text-warn-text">Bukti ditolak: {o.paymentNote}. Silakan kirim ulang.</p>}
 
       {!verified && (
@@ -280,37 +266,6 @@ function PaymentPanel({ o, code, reload, waLink }) {
           {msg && <p role="alert" className="text-sm font-semibold text-ink">{msg}</p>}
         </form>
       )}
-      {!verified && o.hasProof && (
-        <div className="space-y-2 border-t border-line pt-4">
-          <button type="button" onClick={shareProof} className="btn btn-ghost w-full">Kirim detail pesanan ke WhatsApp penjual</button>
-          <p className="text-xs text-ink-2">Foto sudah tampil di dashboard penjual. WhatsApp tidak bisa melampirkan foto otomatis; bila perlu, lampirkan foto dari galeri di chat.</p>
-        </div>
-      )}
     </section>
   );
-}
-
-// Teks bukti pembayaran untuk WhatsApp (versi klien dari lib/orders.js).
-function proofMessage(o) {
-  const L = [`*BUKTI PEMBAYARAN - KABOBA TIME*`, `Kode order: *${o.code}*`, `Nama: ${o.name}`, `WhatsApp: ${o.phone}`, `Metode: ${o.payment}`, '', '*Pesanan*'];
-  o.items.forEach((it, i) => {
-    const addons = it.addons.length ? ` + ${it.addons.map((a) => a.name).join(', ')}` : '';
-    L.push(`${i + 1}. ${it.name}${addons} x${it.qty} = ${rp(it.price * it.qty)}`);
-    if (it.note) L.push(`   Catatan: ${it.note}`);
-  });
-  if (o.mode === 'antar') {
-    L.push('', `Antar ke: ${o.address}`);
-    if (o.distanceKm != null) L.push(`Jarak: ${String(o.distanceKm).replace('.', ',')} km`);
-  } else {
-    L.push('', 'Ambil di outlet');
-  }
-  L.push('', `Subtotal: ${rp(o.subtotal)}`, ...(o.discount ? [`Diskon: -${rp(o.discount)}`] : []), `Ongkir: ${o.fee ? rp(o.fee) : 'Gratis'}`, `*Total: ${rp(o.total)}*`);
-  if (o.note) L.push(`Catatan pesanan: ${o.note}`);
-  return L.join('\n');
-}
-
-// Nomor penjual diambil dari tautan WhatsApp pesanan (https://wa.me/<nomor>?text=...).
-function waNumber(link) {
-  const m = /wa\.me\/(\d+)/.exec(link || '');
-  return m ? m[1] : '';
 }

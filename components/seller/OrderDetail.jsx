@@ -173,7 +173,7 @@ export default function OrderDetail({ code }) {
           </div>
         )}
         {!hasPay && o.cashPaidAt && <p className="rounded-xl bg-leaf-soft p-3 font-semibold text-leaf">Tunai diterima {rp(o.cashReceived)} · Kembalian {rp(o.cashChange)}.</p>}
-        {hasPay && o.waProofAt && <p className="rounded-xl bg-sky-soft p-3 text-sm font-semibold text-sky">Pembeli membagikan bukti lewat WhatsApp pada {when(o.waProofAt)}. Cek foto di bawah, lalu verifikasi atau tolak.</p>}
+        {hasPay && o.proofUrl && <p className="rounded-xl bg-sky-soft p-3 text-sm font-semibold text-sky">Bukti pembayaran sudah diunggah pembeli di website. Cek foto di bawah, lalu verifikasi atau tolak.</p>}
 
         {hasPay && !o.proofUrl && <p className="text-ink-2">Pembeli belum mengunggah bukti pembayaran.</p>}
 

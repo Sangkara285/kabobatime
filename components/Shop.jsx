@@ -450,7 +450,7 @@ function Sheet({ p, addons, close, add }) {
 
 const PAY_OPTIONS = [
   ['Tunai', 'bayar saat terima'],
-  ['QRIS', 'scan QRIS, lalu kirim bukti'],
+  ['QRIS', 'scan QRIS, lalu unggah bukti di website'],
 ];
 
 function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, back, done }) {

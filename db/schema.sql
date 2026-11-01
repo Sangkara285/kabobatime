@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS orders (
   payment_proof_at DATETIME NULL,
   payment_reject_note VARCHAR(160) NULL,
   completed_at DATETIME NULL,
-  wa_proof_at DATETIME NULL,
   cash_received INT NULL,
   cash_change INT NULL,
   cash_paid_at DATETIME NULL,
