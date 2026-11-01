@@ -42,7 +42,7 @@ function Lookup() {
       <BackButton href="/" label="Menu" />
       <form onSubmit={go} className="card space-y-4 p-6">
         <h1 className="text-2xl font-extrabold">Lacak pesanan</h1>
-        <p className="text-ink-2">Masukkan kode order yang kamu terima setelah memesan, contohnya KBT-0111-ABCD.</p>
+        <p className="text-ink-2">Masukkan kode order yang kamu terima setelah memesan, contohnya KBT-0111-ABCDEFGH.</p>
         <div>
           <label htmlFor="kode" className="mb-1.5 block font-semibold">Kode order</label>
           <input id="kode" className="field font-mono uppercase" value={v} onChange={(e) => setV(e.target.value)} autoComplete="off" autoFocus />
@@ -154,9 +154,9 @@ function Ticket({ code }) {
 
       <section className="card p-6">
         <h2 className="mb-3 text-lg font-bold">Detail pesanan</h2>
-        <p className="text-sm text-ink-2">{o.name} · {o.phone}</p>
+        <p className="text-sm text-ink-2">Atas nama {o.name}</p>
         <p className="mt-1 text-sm text-ink-2">
-          {o.mode === 'antar' ? `Antar ke: ${o.address}` : 'Ambil sendiri di outlet'}
+          {o.mode === 'antar' ? 'Diantar ke alamat yang diberikan saat memesan' : 'Ambil sendiri di outlet'}
           {o.mode === 'antar' && o.distanceKm != null && ` · ${String(o.distanceKm).replace('.', ',')} km`}
         </p>
         <ul className="mt-4 divide-y divide-line">
