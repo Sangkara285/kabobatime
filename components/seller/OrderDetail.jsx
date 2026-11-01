@@ -29,6 +29,7 @@ export default function OrderDetail({ code }) {
   const [zoom, setZoom] = useState(false);
   const [scale, setScale] = useState(150);
   const [copied, setCopied] = useState(false);
+  const [cashReceived, setCashReceived] = useState('');
 
   const load = useCallback(async () => {
     const r = await api(`/api/seller/orders/${code}`);
@@ -73,7 +74,6 @@ export default function OrderDetail({ code }) {
   const idx = STEPS.indexOf(o.status);
   const hasPay = o.payment !== 'Tunai';
   const verified = o.paymentStatus === 'terverifikasi';
-  const [cashReceived, setCashReceived] = useState('');
 
   return (
     <Shell>
