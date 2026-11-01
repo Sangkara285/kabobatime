@@ -10,8 +10,8 @@ export async function GET(_req, { params }) {
   const order = await loadOrder(code);
   if (!order) {
     const [[expired]] = await pool().query(
-      'SELECT id FROM orders WHERE code = ? AND status = ? AND completed_at < NOW() - INTERVAL ? MINUTE',
-      [code, 'selesai', TRACKING_EXPIRY_MINUTES],
+      `SELECT id FROM orders WHERE code = ? AND status = ? AND completed_at < NOW() - INTERVAL ${TRACKING_EXPIRY_MINUTES} MINUTE`,
+      [code, 'selesai'],
     );
     if (expired) return NextResponse.json({ error: 'Halaman lacak pesanan ini sudah tidak tersedia.' }, { status: 410 });
     return NextResponse.json({ error: 'Kode order tidak ditemukan.' }, { status: 404 });
