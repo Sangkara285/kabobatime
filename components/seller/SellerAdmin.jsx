@@ -383,6 +383,7 @@ function CouriersAdmin({ notify }) {
   return (
     <section className="card space-y-4 p-5">
       <h2 className="text-lg font-bold">Akun kurir</h2>
+      <p className="text-sm text-ink-2">Maksimal dua akun. Pesanan hanya tampil pada akun kurir yang dipilih seller.</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field id="courier-name" label="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <Field id="courier-username" label="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
@@ -390,7 +391,7 @@ function CouriersAdmin({ notify }) {
         <Field id="courier-phone" label="Telepon (opsional)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
       </div>
       {error && <p role="alert" className="rounded-xl bg-warn-soft p-3 text-warn-text">{error}</p>}
-      <button type="button" className="btn" onClick={add} disabled={!form.name || !form.username || form.password.length < 8}>Tambah kurir</button>
+      <button type="button" className="btn" onClick={add} disabled={couriers.length >= 2 || !form.name || !form.username || form.password.length < 8}>{couriers.length >= 2 ? 'Maksimal dua akun' : 'Tambah kurir'}</button>
       <ul className="divide-y divide-line rounded-xl ring-1 ring-line">
         {couriers.map((c) => (
           <li key={c.id} className="space-y-2 p-3">

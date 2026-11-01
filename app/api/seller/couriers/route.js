@@ -17,6 +17,8 @@ export async function POST(req) {
   const password = String(b.password || '');
   if (!name || !/^[a-z0-9._-]{3,40}$/.test(username) || password.length < 8) return NextResponse.json({ error: 'Nama, username, dan password minimal 8 karakter wajib diisi.' }, { status: 400 });
   try {
+    const [[{ count }]] = await pool().query('SELECT COUNT(*) AS count FROM couriers');
+    if (Number(count) >= 2) return NextResponse.json({ error: 'Maksimal hanya dua akun kurir yang dapat dibuat.' }, { status: 409 });
     await pool().query('INSERT INTO couriers (name, username, password_hash, phone) VALUES (?,?,?,?)', [name, username, await hashCourierPassword(password), String(b.phone || '').trim().slice(0, 30) || null]);
     return NextResponse.json({ ok: true });
   } catch (e) {
