@@ -160,6 +160,7 @@ export default function OrderDetail({ code }) {
         </div>
 
         {!hasPay && <p className="text-ink-2">Dibayar tunai saat pesanan diterima. Tidak perlu bukti pembayaran.</p>}
+        {hasPay && o.waProofAt && <p className="rounded-xl bg-sky-soft p-3 text-sm font-semibold text-sky">Pembeli membagikan bukti lewat WhatsApp pada {when(o.waProofAt)}. Cek foto di bawah, lalu verifikasi atau tolak.</p>}
 
         {hasPay && !o.proofUrl && <p className="text-ink-2">Pembeli belum mengunggah bukti pembayaran.</p>}
 

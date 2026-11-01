@@ -199,6 +199,7 @@ function OrdersTab({ notify }) {
                 {hasPay && (
                   <div className="flex flex-wrap gap-2 text-xs font-bold">
                     <span className={`rounded-full px-2.5 py-1 ${PAYBADGE[o.paymentStatus] || PAYBADGE.belum}`}>{o.payment}: {PAYTEXT[o.paymentStatus] || ''}</span>
+                    {o.waProofAt && <span className="rounded-full bg-sky-soft px-2.5 py-1 text-sky">Bukti dikirim lewat WhatsApp · {when(o.waProofAt)}</span>}
                   </div>
                 )}
 
