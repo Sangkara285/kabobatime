@@ -43,6 +43,7 @@ await addColumn('orders', 'payment_proof', 'VARCHAR(255) NULL');
 await addColumn('orders', 'payment_proof_at', 'DATETIME NULL');
 await addColumn('orders', 'payment_reject_note', 'VARCHAR(160) NULL');
 await addColumn('orders', 'completed_at', 'DATETIME NULL');
+await addColumn('orders', 'shipped_at', 'DATETIME NULL');
 await addColumn('orders', 'accepted_at', 'DATETIME NULL');
 await addColumn('orders', 'ready_at', 'DATETIME NULL');
 await addColumn('orders', 'discount_amount', 'INT NOT NULL DEFAULT 0');
@@ -51,6 +52,11 @@ await addColumn('orders', 'cash_change', 'INT NULL');
 await addColumn('orders', 'cash_amount', 'INT NULL');
 await addColumn('orders', 'cash_paid_at', 'DATETIME NULL');
 await addColumn('orders', 'courier_id', 'INT NULL');
+const [[statusColumn]] = await conn.query("SELECT column_type FROM information_schema.columns WHERE table_schema=? AND table_name='orders' AND column_name='status'", [dbName]);
+if (!statusColumn?.column_type?.includes("'diantar'")) {
+  await conn.query("ALTER TABLE orders MODIFY status ENUM('baru','diproses','siap','diantar','selesai','batal') NOT NULL DEFAULT 'baru'");
+  console.log('+ status orders.diantar');
+}
 await conn.query('CREATE TABLE IF NOT EXISTS couriers (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(80) NOT NULL, username VARCHAR(40) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL, phone VARCHAR(30) NULL, active TINYINT(1) NOT NULL DEFAULT 1, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 const [[fk]] = await conn.query("SELECT COUNT(*) AS n FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME='orders' AND COLUMN_NAME='courier_id' AND REFERENCED_TABLE_NAME='couriers'", [dbName]);
 if (!fk.n) {
