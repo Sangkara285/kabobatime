@@ -77,8 +77,9 @@ function Ticket({ code }) {
   }, [code]);
 
   useEffect(() => {
+    if (expired) return undefined;
     load();
-    const t = setInterval(() => { if (!expired) load(); }, 10000);
+    const t = setInterval(load, 10000);
     return () => clearInterval(t);
   }, [load, expired]);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
