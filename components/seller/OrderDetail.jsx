@@ -104,7 +104,6 @@ export default function OrderDetail({ code }) {
       <section className="sticky bottom-0 z-30 -mx-4 border-y border-line bg-card/95 p-3 backdrop-blur lg:static lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-4" aria-label="Aksi">
         <div className="flex flex-wrap items-center gap-2">
           {nx && <button className="btn min-h-11 flex-1 sm:flex-none sm:px-6" disabled={busy} onClick={() => act({ status: nx[0] }, `Status diubah ke ${statusLabel(nx[0], o.mode)}`)}>{nxLabel}</button>}
-          {o.status === 'siap' && o.mode === 'antar' && <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => act({ status: 'selesai' }, 'Pesanan diselesaikan manual')}>Tandai selesai (cadangan)</button>}
           {o.status === 'batal' && <button type="button" className="btn min-h-11 flex-1 sm:flex-none" disabled={busy} onClick={() => act({ status: 'baru' }, 'Pesanan diaktifkan lagi')}>Aktifkan lagi</button>}
           <a className="btn btn-wa btn-sm" target="_blank" rel="noopener noreferrer" href={chatUrl(o)}>Chat pembeli</a>
           <button type="button" className="btn btn-ghost btn-sm" onClick={copyReply}>{copied ? 'Tersalin' : 'Salin pesan'}</button>

@@ -234,7 +234,6 @@ function OrdersTab({ notify }) {
 
                 <div className="mt-auto flex flex-wrap gap-2">
                   {nx && <button className="btn btn-sm flex-1" onClick={() => change(o, { status: nx[0] }, `${o.code} → ${statusLabel(nx[0], o.mode)}`)}>{nxLabel}</button>}
-                  {o.status === 'siap' && o.mode === 'antar' && <button className="btn btn-ghost btn-sm" onClick={() => change(o, { status: 'selesai' }, `${o.code} diselesaikan manual`)}>Tandai selesai (cadangan)</button>}
                   <a className="btn btn-ghost btn-sm flex-1" target="_blank" rel="noopener noreferrer" href={chatUrl(o)}>Chat pembeli</a>
                   {o.status === 'diantar' ? null : o.status === 'batal'
                     ? <button className="btn btn-ghost btn-sm" onClick={() => change(o, { status: 'baru' }, 'Pesanan diaktifkan lagi')}>Aktifkan lagi</button>

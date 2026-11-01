@@ -36,7 +36,7 @@ export async function PATCH(req, { params }) {
       } else if (b.status === 'siap') {
         await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = COALESCE(ready_at, NOW()), shipped_at = NULL, completed_at = NULL WHERE id = ?', [b.status, o.id]);
       } else if (b.status === 'selesai') {
-        if (o.mode === 'antar' && o.status !== 'siap') return err('Pesanan antar hanya dapat diselesaikan penjual sebagai cadangan saat status siap.', 409);
+        if (o.mode === 'antar') return err('Pesanan antar diselesaikan oleh kurir.', 409);
         await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = COALESCE(ready_at, NOW()), completed_at = COALESCE(completed_at, NOW()) WHERE id = ?', [b.status, o.id]);
       } else {
         await pool().query('UPDATE orders SET status = ?, completed_at = NULL WHERE id = ?', [b.status, o.id]);
