@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Warna terang (default). Nilai RGB dipisah spasi agar bisa dipakai dengan opacity Tailwind. */
+:root {
+  --font-display: 'Bricolage Grotesque';
+  --font-body: 'Hanken Grotesk';
+  --font-mono: 'DM Mono';
+  --ink: 42 27 18;
+  --ink-2: 92 74 60;
+  --paper: 250 246 240;
+  --card: 255 255 255;
+  --line: 233 223 210;
+  --brand: 184 83 6;
+  --brand-dark: 143 63 4;
+  --brand-soft: 252 233 212;
+  --accent: 184 83 6;
+  --leaf: 31 122 77;
+  --leaf-btn: 31 122 77;
+  --leaf-soft: 221 241 229;
+  --warn: 179 38 30;
+  --warn-text: 179 38 30;
+  --warn-soft: 251 227 224;
+  --sky: 43 95 168;
+  --sky-soft: 224 234 247;
+  color-scheme: light;
+}
+
+/* Warna gelap: dipasang oleh kelas .dark pada <html>. */
+.dark {
+  --ink: 245 236 226;
+  --ink-2: 201 184 168;
+  --paper: 22 16 12;
+  --card: 36 27 21;
+  --line: 74 58 47;
+  --brand: 184 83 6;
+  --brand-dark: 255 154 77;
+  --brand-soft: 70 40 20;
+  --accent: 255 154 77;
+  --leaf: 111 211 154;
+  --leaf-btn: 31 122 77;
+  --leaf-soft: 22 58 40;
+  --warn: 179 38 30;
+  --warn-text: 255 150 140;
+  --warn-soft: 74 28 25;
+  --sky: 138 180 240;
+  --sky-soft: 27 42 64;
+  color-scheme: dark;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body { @apply bg-paper font-body text-ink antialiased; }
+h1, h2, h3 { @apply font-display; text-wrap: balance; }
+.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid rgb(var(--brand)); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+@layer components {
+  .btn { @apply inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-3.5 font-bold text-white transition hover:bg-brand-dark active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-ghost { @apply bg-transparent text-ink ring-1 ring-inset ring-line hover:bg-brand-soft; }
+  .btn-wa { @apply bg-leaf-btn hover:brightness-110; }
+  .btn-sm { @apply w-auto rounded-xl px-3.5 py-2 text-sm; }
+  .field { @apply w-full rounded-xl border border-line bg-paper px-3.5 py-3 text-base text-ink outline-none focus:border-brand; }
+  .field::placeholder { color: rgb(var(--ink-2)); opacity: 1; }
+  .card { @apply rounded-3xl border border-line bg-card text-ink; }
+  .lbl { @apply mb-2 text-xs font-bold uppercase tracking-wider text-ink-2; }
+}
