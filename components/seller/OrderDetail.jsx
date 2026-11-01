@@ -29,7 +29,7 @@ export default function OrderDetail({ code }) {
   const [zoom, setZoom] = useState(false);
   const [scale, setScale] = useState(150);
   const [copied, setCopied] = useState(false);
-  const [cashReceived, setCashReceived] = useState('');
+  const [cashReceived, setCashReceived] = useState(null);
   const [couriers, setCouriers] = useState([]);
 
   const load = useCallback(async () => {
@@ -38,7 +38,7 @@ export default function OrderDetail({ code }) {
     if (!r.ok) { setErr(r.data.error || 'Pesanan tidak bisa dibuka.'); return; }
     setErr('');
     setO(r.data.order);
-    setCashReceived((current) => current || (r.data.order.cashAmount ? String(r.data.order.cashAmount) : ''));
+    setCashReceived((current) => current === null ? (r.data.order.cashAmount ? String(r.data.order.cashAmount) : '') : current);
   }, [code]);
 
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [load]);
@@ -171,7 +171,7 @@ export default function OrderDetail({ code }) {
           {!hasPay && !o.cashPaidAt && (
             <div className="space-y-2 rounded-xl bg-paper p-3">
               <label htmlFor="cash-received" className="block font-semibold">Uang tunai diterima (Rp)</label>
-              <input id="cash-received" type="text" className="field num" inputMode="numeric" autoComplete="off" value={cashReceived} onChange={(e) => setCashReceived(e.target.value.replace(/[^\d]/g, ''))} placeholder={String(o.cashAmount || o.total)} />
+              <input id="cash-received" type="text" className="field num" inputMode="numeric" autoComplete="off" value={cashReceived ?? ''} onChange={(e) => setCashReceived(e.target.value.replace(/[^\d]/g, ''))} placeholder={String(o.cashAmount || o.total)} />
               <button type="button" className="btn w-full sm:w-auto" disabled={busy || !cashReceived} onClick={() => act({ cash_received: Number(cashReceived) }, 'Pembayaran tunai dicatat')}>Catat tunai</button>
               <p className="text-xs text-ink-2">Total {rp(o.total)}. Kembalian dihitung otomatis.</p>
             </div>

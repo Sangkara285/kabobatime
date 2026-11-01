@@ -454,7 +454,7 @@ const PAY_OPTIONS = [
 ];
 
 function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, back, done }) {
-  const [f, setF] = useState({ name: '', phone: '', mode: 'antar', address: '', landmark: '', payment: 'Tunai', note: '' });
+  const [f, setF] = useState({ name: '', phone: '', mode: 'antar', address: '', landmark: '', payment: 'Tunai', cashAmount: '', note: '' });
   const [loc, setLoc] = useState(null);
   const [quote, setQuote] = useState(null);
   const [quoting, setQuoting] = useState(false);
@@ -494,7 +494,12 @@ function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, b
   const far = f.mode === 'antar' && quote?.ok && !quote.withinRange;
   const discount = Math.min(subtotal, Math.round(subtotal * (Number(settings.discount_percent) || 0) / 100));
   const total = subtotal - discount + fee;
-  const canSubmit = !busy && !soldLines.length && subtotal > 0 && !far && (f.mode === 'ambil' || (quote?.ok && !quoting));
+  const cashValue = f.cashAmount.trim() ? Number(f.cashAmount) : null;
+  const cashError = f.payment !== 'Tunai' || cashValue === null ? '' :
+    (!Number.isSafeInteger(cashValue) ? 'Masukkan nominal dalam rupiah bulat.' :
+      cashValue < total ? `Uang yang disiapkan kurang dari total ${rp(total)}.` :
+        (cashValue !== total && cashValue > 10000000) ? 'Maksimal uang tunai yang disiapkan Rp 10.000.000.' : '');
+  const canSubmit = !busy && !cashError && !soldLines.length && subtotal > 0 && !far && (f.mode === 'ambil' || (quote?.ok && !quoting));
 
   async function submit(e) {
     e.preventDefault();
@@ -504,6 +509,7 @@ function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, b
     if (d.length < 9 || d.length > 15) er.phone = 'Nomor WhatsApp belum benar, contoh 081234567890.';
     if (f.mode === 'antar' && f.address.trim().length < 8) er.address = 'Isi alamat lengkap untuk pengantaran.';
     if (f.mode === 'antar' && !loc) er.loc = 'Pilih titik antar di peta.';
+    if (cashError) er.cash = cashError;
     setErr(er); setFail('');
     const first = Object.keys(er)[0];
     if (first) {
@@ -517,7 +523,7 @@ function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, b
       const address = f.mode === 'antar' ? f.address.trim() + (f.landmark.trim() ? ` (patokan: ${f.landmark.trim()})` : '') : '';
       const res = await fetch('/api/orders', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...f, address, lat: loc?.lat, lng: loc?.lng, items: cart.map((l) => ({ id: l.id, qty: l.qty, note: l.note, addons: l.addons.map((a) => a.id) })) }),
+        body: JSON.stringify({ ...f, cash_amount: f.payment === 'Tunai' && cashValue !== null && cashValue > total ? cashValue : null, address, lat: loc?.lat, lng: loc?.lng, items: cart.map((l) => ({ id: l.id, qty: l.qty, note: l.note, addons: l.addons.map((a) => a.id) })) }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { if (data.soldOut || data.reload) refresh(); throw new Error(data.error || 'Gagal membuat pesanan.'); }
@@ -583,6 +589,21 @@ function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, b
             </label>
           ))}
         </div>
+        {f.payment === 'Tunai' && (
+          <div className="space-y-3 rounded-xl bg-paper p-4">
+            <p className="font-semibold">Mau bayar pakai uang berapa?</p>
+            <div className="flex flex-wrap gap-2">
+              {[['Uang pas', String(total)], ['Rp 20.000', '20000'], ['Rp 50.000', '50000'], ['Rp 100.000', '100000']].map(([label, amount]) => (
+                <button key={label} type="button" className={`btn btn-sm ${f.cashAmount === amount ? '' : 'btn-ghost'}`} onClick={() => setF((x) => ({ ...x, cashAmount: amount }))}>{label}</button>
+              ))}
+            </div>
+            <div>
+              <label htmlFor="f-cash-amount" className="mb-1.5 block text-sm font-semibold">Atau isi nominal sendiri</label>
+              <input id="f-cash-amount" className="field num" inputMode="numeric" autoComplete="off" value={f.cashAmount} onChange={(e) => setF((x) => ({ ...x, cashAmount: e.target.value.replace(/\D/g, '') }))} placeholder="Kosongkan untuk uang pas" aria-invalid={!!cashError} />
+              <FieldErr msg={cashError} />
+            </div>
+          </div>
+        )}
         <div><label htmlFor="f-note" className="mb-1.5 block font-semibold">Catatan <span className="font-normal text-ink-2">(opsional)</span></label>
           <textarea id="f-note" className="field min-h-16" maxLength={200} placeholder="Contoh: tolong telepon saat sampai" value={f.note} onChange={set('note')} /></div>
       </section>
@@ -602,6 +623,7 @@ function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, b
             <p className="text-sm text-ink-2">{String(quote.km).replace('.', ',')} km, dibulatkan {quote.billedKm} km × {rp(quote.perKm)}{quote.free ? ' (gratis ongkir)' : ''}</p>
           )}
           <div className="flex justify-between pt-1 text-lg font-extrabold"><span>Total</span><span className="num">{rp(total)}</span></div>
+          {f.payment === 'Tunai' && cashValue !== null && cashValue > total && !cashError && <div className="flex justify-between font-semibold text-leaf"><span>Kembalian perkiraan</span><span className="num">{rp(cashValue - total)}</span></div>}
         </div>
         {far && <p role="alert" className="mt-3 rounded-xl bg-warn-soft p-3 text-warn-text">Lokasimu {String(quote.km).replace('.', ',')} km dari outlet, di luar jangkauan antar (maks {quote.maxKm} km). Pilih ambil sendiri, atau hubungi kami lewat WhatsApp.</p>}
         {f.mode === 'antar' && quote?.error && <p role="alert" className="mt-3 rounded-xl bg-warn-soft p-3 text-warn-text">{quote.error}</p>}

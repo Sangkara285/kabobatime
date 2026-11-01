@@ -65,6 +65,12 @@ export async function POST(req) {
   }
   const discount = Math.min(subtotal, Math.round(subtotal * (Number(settings.discount_percent) || 0) / 100));
   const total = subtotal - discount + fee;
+  const rawCashAmount = b.cash_amount === undefined || b.cash_amount === null || b.cash_amount === '' ? null : Number(b.cash_amount);
+  if (payment !== 'Tunai' && rawCashAmount !== null) return bad('Uang yang disiapkan hanya berlaku untuk pembayaran Tunai.', 400);
+  if (payment === 'Tunai' && rawCashAmount !== null && (!Number.isSafeInteger(rawCashAmount) || rawCashAmount < total || (rawCashAmount !== total && rawCashAmount > 10000000))) {
+    return bad(`Uang tunai harus berupa angka bulat minimal ${total} dan maksimal 10000000.`, 400);
+  }
+  const cashAmount = rawCashAmount === total ? null : rawCashAmount;
 
   const conn = await pool().getConnection();
   try {
@@ -74,9 +80,9 @@ export async function POST(req) {
       code = genCode();
       try {
         const [r] = await conn.query(
-          `INSERT INTO orders (code, customer_name, phone, mode, address, lat, lng, distance_km, distance_source, payment, note, subtotal, discount_amount, fee, total)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-          [code, name, phone, mode, mode === 'antar' ? address : null, lat, lng, km, source, payment, note || null, subtotal, discount, fee, total]);
+          `INSERT INTO orders (code, customer_name, phone, mode, address, lat, lng, distance_km, distance_source, payment, note, subtotal, discount_amount, fee, total, cash_amount)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [code, name, phone, mode, mode === 'antar' ? address : null, lat, lng, km, source, payment, note || null, subtotal, discount, fee, total, cashAmount]);
         orderId = r.insertId; break;
       } catch (e) { if (e.code !== 'ER_DUP_ENTRY' || t === 5) throw e; }
     }

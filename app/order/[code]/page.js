@@ -113,7 +113,7 @@ function Ticket({ code }) {
     <Shell>
       <BackButton href="/" label="Menu" />
 
-      {fresh && !cancelled && (
+      {fresh && o.status === 'baru' && !cancelled && (
         <div role="status" className="rounded-2xl bg-leaf-soft p-4 font-semibold text-leaf">
           Pesananmu sudah masuk. Kirim ke WhatsApp penjual supaya segera diproses.
         </div>
@@ -175,6 +175,9 @@ function Ticket({ code }) {
           <div className="flex justify-between"><span>Ongkir</span><span className="num">{o.fee ? rp(o.fee) : 'Gratis'}</span></div>
           <div className="flex justify-between pt-1 text-lg font-extrabold"><span>Total</span><span className="num">{rp(o.total)}</span></div>
           <div className="flex justify-between pt-2 text-ink-2"><span>Pembayaran</span><span>{o.payment}</span></div>
+          {o.payment === 'Tunai' && (o.cashAmount
+            ? <div className="rounded-xl bg-brand-soft p-3 text-sm font-semibold text-ink">{o.mode === 'antar' ? `Kamu akan membayar pakai ${rp(o.cashAmount)}. Kembalian ${rp(Math.max(0, o.cashAmount - o.total))} akan dibawa kurir.` : `Kamu akan membayar pakai ${rp(o.cashAmount)}. Kembalian ${rp(Math.max(0, o.cashAmount - o.total))}.`}</div>
+            : <div className="rounded-xl bg-leaf-soft p-3 text-sm font-semibold text-leaf">Uang pas.</div>)}
           <div className="flex justify-between text-ink-2"><span>Status</span><span>{statusLabel(o.status, o.mode)}</span></div>
         </div>
       </section>
