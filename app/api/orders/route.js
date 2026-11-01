@@ -16,7 +16,8 @@ export async function POST(req) {
   const phone = flat(b.phone).slice(0, 30);
   const mode = b.mode === 'ambil' ? 'ambil' : 'antar';
   const address = flat(b.address).slice(0, 400);
-  const payment = ['Tunai', 'QRIS'].includes(b.payment) ? b.payment : 'Tunai';
+  if (b.payment !== undefined && !['Tunai', 'QRIS'].includes(b.payment)) return bad('Metode pembayaran tidak tersedia.', 400);
+  const payment = b.payment || 'Tunai';
   const note = flat(b.note).slice(0, 240);
   const digits = phone.replace(/\D/g, '');
 

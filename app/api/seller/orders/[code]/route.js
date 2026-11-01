@@ -22,7 +22,7 @@ export async function PATCH(req, { params }) {
   const code = String(params.code).toUpperCase();
   const b = await req.json().catch(() => ({}));
   try {
-    const [[o]] = await pool().query('SELECT id, payment, total, payment_proof FROM orders WHERE code = ?', [code]);
+    const [[o]] = await pool().query('SELECT id, payment, total, payment_proof, payment_status FROM orders WHERE code = ?', [code]);
     if (!o) return err('Pesanan tidak ditemukan.', 404);
 
     if (b.status !== undefined) {
@@ -35,7 +35,9 @@ export async function PATCH(req, { params }) {
       if (!['terverifikasi', 'ditolak'].includes(b.payment)) return err('Aksi pembayaran tidak valid.', 400);
       if (!o.payment_proof) return err('Belum ada bukti pembayaran untuk pesanan ini.', 409);
       const note = b.payment === 'ditolak' ? flat(b.note).slice(0, 160) || 'Bukti tidak jelas, mohon kirim ulang.' : null;
-      await pool().query('UPDATE orders SET payment_status = ?, payment_reject_note = ? WHERE id = ?', [b.payment, note, o.id]);
+      const legacy = ['pending', 'verified', 'rejected'].includes(o.payment_status);
+      const nextPayment = legacy ? { terverifikasi: 'verified', ditolak: 'rejected' }[b.payment] : b.payment;
+      await pool().query('UPDATE orders SET payment_status = ?, payment_reject_note = ? WHERE id = ?', [nextPayment, note, o.id]);
     }
 
     if (b.cash_received !== undefined) {
@@ -43,8 +45,8 @@ export async function PATCH(req, { params }) {
       const received = Number(b.cash_received);
       if (!Number.isInteger(received) || received < o.total) return err('Uang diterima harus berupa angka bulat dan minimal sama dengan total.', 400);
       await pool().query(
-        "UPDATE orders SET cash_received = ?, cash_change = ?, cash_paid_at = NOW(), payment_status = 'terverifikasi', payment_reject_note = NULL WHERE id = ?",
-        [received, received - o.total, o.id],
+        "UPDATE orders SET cash_received = ?, cash_change = ?, cash_paid_at = NOW(), payment_status = ?, payment_reject_note = NULL WHERE id = ?",
+        [received, received - o.total, ['pending', 'verified', 'rejected'].includes(o.payment_status) ? 'verified' : 'terverifikasi', o.id],
       );
     }
 

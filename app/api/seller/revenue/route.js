@@ -39,6 +39,7 @@ export async function GET(req) {
        COALESCE(SUM(status = 'selesai'), 0) AS completed_orders,
        COALESCE(SUM(status IN ('baru', 'diproses', 'siap')), 0) AS running_orders,
        COALESCE(SUM(status = 'batal'), 0) AS cancelled_orders,
+       COALESCE(SUM(status = 'selesai' AND payment_status IN ('terverifikasi', 'verified')), 0) AS verified_payments,
        COALESCE(SUM(CASE WHEN status = 'selesai' THEN subtotal ELSE 0 END), 0) AS gross_revenue,
        COALESCE(SUM(CASE WHEN status = 'selesai' THEN discount_amount ELSE 0 END), 0) AS discounts,
        COALESCE(SUM(CASE WHEN status = 'selesai' THEN total ELSE 0 END), 0) AS revenue
@@ -49,7 +50,7 @@ export async function GET(req) {
     `SELECT DATE_FORMAT(CASE WHEN TIME(created_at) < '16:00:00' THEN DATE_SUB(DATE(created_at), INTERVAL 1 DAY) ELSE DATE(created_at) END, '%Y-%m-%d') AS date,
        COUNT(*) AS orders, COALESCE(SUM(subtotal), 0) AS gross_revenue, COALESCE(SUM(discount_amount), 0) AS discounts, COALESCE(SUM(total), 0) AS revenue
      FROM orders WHERE status = 'selesai' AND ${range}
-     GROUP BY CASE WHEN TIME(created_at) < '16:00:00' THEN DATE_SUB(DATE(created_at), INTERVAL 1 DAY) ELSE DATE(created_at) END ORDER BY date`,
+     GROUP BY date ORDER BY date`,
     [from, to],
   );
   const [paymentRows] = await db.query(
@@ -81,6 +82,8 @@ export async function GET(req) {
       completedOrders: Number(s.completed_orders || 0),
       runningOrders: Number(s.running_orders || 0),
       cancelledOrders: Number(s.cancelled_orders || 0),
+      verifiedPayments: Number(s.verified_payments || 0),
+      averageRevenue: Number(s.completed_orders || 0) ? asMoney(s.revenue) / Number(s.completed_orders) : 0,
       totalOrders: Number(s.total_orders || 0),
     },
     daily: dailyRows.map((r) => ({ date: r.date, orders: Number(r.orders), grossRevenue: asMoney(r.gross_revenue), discounts: asMoney(r.discounts), revenue: asMoney(r.revenue) })),

@@ -25,9 +25,10 @@ export async function POST(req, { params }) {
     if (!ext) return bad('Format foto harus JPG, PNG, atau WebP.');
 
     const name = await saveProof(buf, ext);
+    const waitingStatus = o.payment_status === 'pending' ? 'pending' : 'menunggu';
     await pool().query(
-      "UPDATE orders SET payment_proof = ?, payment_status = 'menunggu', payment_proof_at = NOW(), payment_reject_note = NULL WHERE id = ?",
-      [name, o.id],
+      'UPDATE orders SET payment_proof = ?, payment_status = ?, payment_proof_at = NOW(), payment_reject_note = NULL WHERE id = ?',
+      [name, waitingStatus, o.id],
     );
     await removeProof(o.payment_proof);
     return NextResponse.json({ ok: true, paymentStatus: 'menunggu' });

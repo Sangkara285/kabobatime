@@ -17,6 +17,7 @@ export default function RevenueTab() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [customDates, setCustomDates] = useState(false);
 
   async function load(start = from, end = to) {
     setLoading(true); setError('');
@@ -27,7 +28,7 @@ export default function RevenueTab() {
   }
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const quick = (start, end = today()) => { setFrom(start); setTo(end); load(start, end); };
+  const quick = (start, end = today()) => { setCustomDates(false); setFrom(start); setTo(end); load(start, end); };
   const maxDaily = useMemo(() => Math.max(1, ...(data?.daily || []).map((r) => r.revenue)), [data]);
   const download = () => {
     if (!data) return;
@@ -45,6 +46,7 @@ export default function RevenueTab() {
         <button className="btn btn-ghost btn-sm" onClick={() => quick(subtract(6))}>7 hari</button>
         <button className="btn btn-ghost btn-sm" onClick={() => quick(subtract(29))}>30 hari</button>
         <button className="btn btn-ghost btn-sm" onClick={() => quick(monthStart())}>Bulan ini</button>
+        <button className={`btn btn-ghost btn-sm ${customDates ? 'ring-2 ring-brand' : ''}`} onClick={() => setCustomDates(true)}>Pilih tanggal</button>
         <button className="btn btn-sm" onClick={load} disabled={loading}>{loading ? 'Memuat…' : 'Terapkan tanggal'}</button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -60,6 +62,8 @@ export default function RevenueTab() {
             <Card label="Pesanan selesai" value={data.summary.completedOrders} />
             <Card label="Masih berjalan" value={data.summary.runningOrders} />
             <Card label="Dibatalkan" value={data.summary.cancelledOrders} />
+            <Card label="Rata-rata selesai" value={rp(data.summary.averageRevenue)} />
+            <Card label="Bukti terverifikasi" value={data.summary.verifiedPayments} />
           </div>
           <section className="card space-y-3 p-5"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold">Pendapatan per hari</h2><div className="flex gap-2"><button className="btn btn-ghost btn-sm" onClick={download}>Unduh CSV</button><button className="btn btn-ghost btn-sm" onClick={downloadPdf}>Unduh PDF</button></div></div>
             {data.daily.length ? data.daily.map((r) => <div key={r.date} className="space-y-1"><div className="flex justify-between gap-2 text-sm"><span>{r.date} · {r.orders} pesanan</span><b>{rp(r.revenue)}</b></div><div className="h-2 rounded-full bg-paper"><div className="h-2 rounded-full bg-brand" style={{ width: `${Math.max(3, r.revenue / maxDaily * 100)}%` }} /></div></div>) : <p className="text-ink-2">Belum ada pesanan selesai.</p>}
