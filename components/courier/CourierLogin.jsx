@@ -11,7 +11,7 @@ export default function CourierLogin() {
   const [busy, setBusy] = useState(false);
   async function submit(e) {
     e.preventDefault(); setBusy(true); setError('');
-    const r = await fetch('/api/courier/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+    const r = await fetch('/api/kurir/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
     const data = await r.json().catch(() => ({}));
     setBusy(false);
     if (!r.ok) { setError(data.error || 'Gagal masuk.'); return; }
