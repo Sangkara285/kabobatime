@@ -7,7 +7,6 @@ import FloatingDock from '@/components/FloatingDock';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const MAX_BYTES = 4 * 1024 * 1024;
-const STEPS = ['baru', 'diproses', 'siap', 'selesai'];
 
 export default function OrderPage() {
   const { code } = useParams();
@@ -105,9 +104,10 @@ function Ticket({ code }) {
   }
 
   const cancelled = o.status === 'batal';
-  const idx = STEPS.indexOf(o.status);
+  const steps = o.mode === 'antar' ? ['baru', 'diproses', 'siap', 'diantar', 'selesai'] : ['baru', 'diproses', 'siap', 'selesai'];
+  const idx = steps.indexOf(o.status);
   const secs = at ? Math.max(0, Math.round((now - at) / 1000)) : null;
-  const stepLabel = (s) => (s === 'siap' ? (o.mode === 'antar' ? 'Sedang diantar' : 'Siap diambil') : { baru: 'Pesanan masuk', diproses: 'Sedang disiapkan', selesai: 'Selesai' }[s]);
+  const shippedTime = o.shippedAt ? new Date(o.shippedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '.') : '';
 
   return (
     <Shell>
@@ -131,13 +131,13 @@ function Ticket({ code }) {
       ) : (
         <section className="card p-6" aria-label="Status pesanan">
           <ol className="space-y-4">
-            {STEPS.map((s, i) => {
+            {steps.map((s, i) => {
               const done = idx >= i;
               const current = idx === i;
               return (
                 <li key={s} className="flex items-center gap-3" aria-current={current ? 'step' : undefined}>
                   <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${done ? 'bg-leaf-btn text-white' : 'bg-paper text-ink-2 ring-1 ring-line'}`}>{done ? '✓' : i + 1}</span>
-                  <span className={`font-semibold ${done ? 'text-ink' : 'text-ink-2'}`}>{stepLabel(s)}</span>
+                  <span className={`font-semibold ${done ? 'text-ink' : 'text-ink-2'}`}>{statusLabel(s, o.mode)}</span>
                   {current && <span className="ml-auto rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand-dark">Sekarang</span>}
                 </li>
               );
@@ -145,6 +145,7 @@ function Ticket({ code }) {
           </ol>
         </section>
       )}
+      {o.status === 'diantar' && <p role="status" className="rounded-2xl bg-sky-soft p-4 font-semibold text-sky">Pesananmu sedang diantar kurir{shippedTime ? ` sejak pukul ${shippedTime}` : ''}{o.courierName ? ` · ${o.courierName}` : ''}.</p>}
 
       {o.payment !== 'Tunai' && !cancelled && (
         <PaymentPanel o={o} code={code} reload={load} />

@@ -165,6 +165,11 @@ export default function Shop({ menu, error, store: info, settings }) {
         <nav aria-label="Pintasan" className="flex shrink-0 items-center gap-2">
           <a href="/order/cari" className="rounded-full px-3 py-2 text-sm font-semibold text-ink ring-1 ring-inset ring-line hover:bg-brand-soft">Lacak pesanan</a>
           <a href="/penjual" className="rounded-full px-3 py-2 text-sm font-semibold text-ink-2 hover:text-ink">Penjual</a>
+          <a href="/kurir" aria-label="Masuk kurir" title="Masuk kurir" className="grid h-10 w-10 place-items-center rounded-full text-ink-2 ring-1 ring-inset ring-line hover:bg-brand-soft hover:text-ink">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 7h11v10H3z" /><path d="M14 10h4l3 3v4h-7z" /><circle cx="7" cy="19" r="2" /><circle cx="18" cy="19" r="2" />
+            </svg>
+          </a>
           <ThemeToggle />
         </nav>
       </header>

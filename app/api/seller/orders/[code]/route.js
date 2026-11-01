@@ -22,18 +22,21 @@ export async function PATCH(req, { params }) {
   const code = String(params.code).toUpperCase();
   const b = await req.json().catch(() => ({}));
   try {
-    const [[o]] = await pool().query('SELECT id, status, payment, total, payment_proof, payment_status, courier_id FROM orders WHERE code = ?', [code]);
+    const [[o]] = await pool().query('SELECT id, status, mode, payment, total, payment_proof, payment_status, courier_id FROM orders WHERE code = ?', [code]);
     if (!o) return err('Pesanan tidak ditemukan.', 404);
 
     if (b.status !== undefined) {
+      if (b.status === 'diantar') return err('Status Sedang diantar hanya dapat diubah oleh kurir.', 400);
       if (!STATUSES.includes(b.status)) return err('Status tidak valid.', 400);
+      if (o.status === 'diantar') return err('Pesanan yang sedang diantar tidak dapat diubah statusnya oleh penjual.', 409);
       if (b.status === 'baru') {
-        await pool().query('UPDATE orders SET status = ?, accepted_at = NULL, ready_at = NULL, completed_at = NULL, courier_id = NULL WHERE id = ?', [b.status, o.id]);
+        await pool().query('UPDATE orders SET status = ?, accepted_at = NULL, ready_at = NULL, shipped_at = NULL, completed_at = NULL, courier_id = NULL WHERE id = ?', [b.status, o.id]);
       } else if (b.status === 'diproses') {
-        await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = NULL, completed_at = NULL WHERE id = ?', [b.status, o.id]);
+        await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = NULL, shipped_at = NULL, completed_at = NULL WHERE id = ?', [b.status, o.id]);
       } else if (b.status === 'siap') {
-        await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = COALESCE(ready_at, NOW()), completed_at = NULL WHERE id = ?', [b.status, o.id]);
+        await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = COALESCE(ready_at, NOW()), shipped_at = NULL, completed_at = NULL WHERE id = ?', [b.status, o.id]);
       } else if (b.status === 'selesai') {
+        if (o.mode === 'antar' && o.status !== 'siap') return err('Pesanan antar hanya dapat diselesaikan penjual sebagai cadangan saat status siap.', 409);
         await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = COALESCE(ready_at, NOW()), completed_at = COALESCE(completed_at, NOW()) WHERE id = ?', [b.status, o.id]);
       } else {
         await pool().query('UPDATE orders SET status = ?, completed_at = NULL WHERE id = ?', [b.status, o.id]);

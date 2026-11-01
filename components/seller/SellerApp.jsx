@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { rp, statusLabel } from '@/lib/format';
 import ThemeToggle from '@/components/ThemeToggle';
 import FloatingDock from '@/components/FloatingDock';
-import { api, FILTERS, NEXT, BADGE, PAYBADGE, PAYTEXT, when, chatUrl } from './shared';
+import { api, FILTERS, nextAction, BADGE, PAYBADGE, PAYTEXT, when, chatUrl } from './shared';
 import { ProductsAdmin, CategoriesAdmin, SettingsAdmin } from './SellerAdmin';
 import RevenueTab from './RevenueTab';
 
 const TABS = [['pesanan', 'Pesanan'], ['rekap', 'Rekap'], ['produk', 'Produk'], ['kategori', 'Kategori'], ['pengaturan', 'Pengaturan']];
-const RANK = { baru: 0, diproses: 1, siap: 2, selesai: 3, batal: 4 };
+const RANK = { baru: 0, diproses: 1, siap: 2, diantar: 3, selesai: 4, batal: 5 };
+const clock = (value) => value ? new Date(value).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '.') : '';
 const gutter = { paddingLeft: 'max(16px, env(safe-area-inset-left))', paddingRight: 'max(16px, env(safe-area-inset-right))' };
 
 export default function SellerApp() {
@@ -191,8 +192,8 @@ function OrdersTab({ notify }) {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {list.map((o) => {
-            const nx = NEXT[o.status];
-            const nxLabel = nx && (nx[1] || (o.mode === 'antar' ? 'Tandai diantar' : 'Siap diambil'));
+            const nx = nextAction(o.status, o.mode);
+            const nxLabel = nx && (nx[1] || statusLabel(nx[0], o.mode));
             const hasPay = o.payment !== 'Tunai';
             return (
               <article key={o.code} className={`card flex min-w-0 flex-col gap-3 p-4 ${o.status === 'baru' ? 'border-brand ring-2 ring-brand/30' : ''}`}>
@@ -210,6 +211,8 @@ function OrdersTab({ notify }) {
                   </div>
                 )}
                 {!hasPay && <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-bold ${o.cashPaidAt ? 'bg-leaf-soft text-leaf' : 'bg-paper text-ink-2 ring-1 ring-line'}`}>{o.cashPaidAt ? 'Tunai dicatat' : 'Tunai belum dicatat'}</span>}
+                {o.status === 'diantar' && <p role="status" className="rounded-xl bg-sky-soft p-2.5 text-sm font-semibold text-sky">Sedang diantar{o.shippedAt ? ` sejak ${clock(o.shippedAt)}` : ''}.</p>}
+                {o.status === 'siap' && o.mode === 'antar' && <p className="rounded-xl bg-paper p-2.5 text-sm font-semibold text-ink-2">{o.courierId ? 'Menunggu kurir mengantar.' : 'Pilih kurir untuk mengantar.'}</p>}
 
                 <div className="break-words text-sm">
                   <b>{o.name}</b><br />{o.phone} · {o.mode === 'antar' ? 'Antar' : 'Ambil'} · {o.payment}
@@ -231,8 +234,9 @@ function OrdersTab({ notify }) {
 
                 <div className="mt-auto flex flex-wrap gap-2">
                   {nx && <button className="btn btn-sm flex-1" onClick={() => change(o, { status: nx[0] }, `${o.code} → ${statusLabel(nx[0], o.mode)}`)}>{nxLabel}</button>}
+                  {o.status === 'siap' && o.mode === 'antar' && <button className="btn btn-ghost btn-sm" onClick={() => change(o, { status: 'selesai' }, `${o.code} diselesaikan manual`)}>Tandai selesai (cadangan)</button>}
                   <a className="btn btn-ghost btn-sm flex-1" target="_blank" rel="noopener noreferrer" href={chatUrl(o)}>Chat pembeli</a>
-                  {o.status === 'batal'
+                  {o.status === 'diantar' ? null : o.status === 'batal'
                     ? <button className="btn btn-ghost btn-sm" onClick={() => change(o, { status: 'baru' }, 'Pesanan diaktifkan lagi')}>Aktifkan lagi</button>
                     : o.status !== 'selesai' && (confirmFor === o.code
                       ? <span className="flex w-full gap-2">

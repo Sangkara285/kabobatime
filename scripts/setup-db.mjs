@@ -52,8 +52,8 @@ await addColumn('orders', 'cash_change', 'INT NULL');
 await addColumn('orders', 'cash_amount', 'INT NULL');
 await addColumn('orders', 'cash_paid_at', 'DATETIME NULL');
 await addColumn('orders', 'courier_id', 'INT NULL');
-const [[statusColumn]] = await conn.query("SELECT column_type FROM information_schema.columns WHERE table_schema=? AND table_name='orders' AND column_name='status'", [dbName]);
-if (!statusColumn?.column_type?.includes("'diantar'")) {
+const [[statusColumn]] = await conn.query("SELECT column_type AS type FROM information_schema.columns WHERE table_schema=? AND table_name='orders' AND column_name='status'", [dbName]);
+if (!statusColumn?.type?.includes("'diantar'")) {
   await conn.query("ALTER TABLE orders MODIFY status ENUM('baru','diproses','siap','diantar','selesai','batal') NOT NULL DEFAULT 'baru'");
   console.log('+ status orders.diantar');
 }

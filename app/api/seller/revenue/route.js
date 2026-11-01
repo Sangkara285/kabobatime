@@ -37,7 +37,7 @@ export async function GET(req) {
     `SELECT
        COUNT(*) AS total_orders,
        COALESCE(SUM(status = 'selesai'), 0) AS completed_orders,
-       COALESCE(SUM(status IN ('baru', 'diproses', 'siap')), 0) AS running_orders,
+       COALESCE(SUM(status IN ('baru', 'diproses', 'siap', 'diantar')), 0) AS running_orders,
        COALESCE(SUM(status = 'batal'), 0) AS cancelled_orders,
        COALESCE(SUM(status = 'selesai' AND payment_status IN ('terverifikasi', 'verified')), 0) AS verified_payments,
        COALESCE(SUM(CASE WHEN status = 'selesai' THEN subtotal ELSE 0 END), 0) AS gross_revenue,

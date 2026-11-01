@@ -19,12 +19,14 @@ export async function api(url, method = 'GET', body) {
   }
 }
 
-export const FILTERS = [['semua', 'Semua'], ['baru', 'Baru'], ['diproses', 'Diproses'], ['siap', 'Siap / diantar'], ['selesai', 'Selesai'], ['batal', 'Batal']];
-export const NEXT = { baru: ['diproses', 'Terima pesanan'], diproses: ['siap', null], siap: ['selesai', 'Tandai selesai'] };
+export const FILTERS = [['semua', 'Semua'], ['baru', 'Baru'], ['diproses', 'Diproses'], ['siap', 'Siap'], ['diantar', 'Sedang diantar'], ['selesai', 'Selesai'], ['batal', 'Batal']];
+export const NEXT = { baru: ['diproses', 'Terima pesanan'], diproses: ['siap', null] };
+export const nextAction = (status, mode) => status === 'siap' && mode === 'ambil' ? ['selesai', 'Tandai selesai'] : NEXT[status] || null;
 export const BADGE = {
   baru: 'bg-brand-soft text-brand-dark',
   diproses: 'bg-sky-soft text-sky',
   siap: 'bg-leaf-soft text-leaf',
+  diantar: 'bg-sky-soft text-sky',
   selesai: 'bg-paper text-ink-2 ring-1 ring-line',
   batal: 'bg-warn-soft text-warn-text',
 };
@@ -47,7 +49,8 @@ export const when = (t) => {
 export function reply(o) {
   const t = rp(o.total);
   if (o.status === 'diproses') return `Halo ${o.name}, pesanan ${o.code} sudah kami terima dan sedang disiapkan. Total ${t}, pembayaran ${o.payment}. Mohon ditunggu ya.`;
-  if (o.status === 'siap') return o.mode === 'antar' ? `Halo ${o.name}, pesanan ${o.code} sedang diantar ke alamatmu. Total ${t}.` : `Halo ${o.name}, pesanan ${o.code} sudah siap diambil di outlet. Total ${t}.`;
+  if (o.status === 'siap') return o.mode === 'antar' ? `Halo ${o.name}, pesanan ${o.code} sudah siap dan menunggu kurir. Total ${t}.` : `Halo ${o.name}, pesanan ${o.code} sudah siap diambil di outlet. Total ${t}.`;
+  if (o.status === 'diantar') return `Halo ${o.name}, pesanan ${o.code} sedang diantar kurir. Total ${t}.`;
   if (o.status === 'selesai') return `Terima kasih ${o.name}, pesanan ${o.code} sudah selesai. Sampai jumpa di Kaboba Time!`;
   if (o.status === 'batal') return `Halo ${o.name}, mohon maaf pesanan ${o.code} kami batalkan. Hubungi kami kalau ada pertanyaan.`;
   return `Halo ${o.name}, pesanan ${o.code} sudah kami terima. Total ${t}, pembayaran ${o.payment}. Kami konfirmasi sebentar lagi ya.`;

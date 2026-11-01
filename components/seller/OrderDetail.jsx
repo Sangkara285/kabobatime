@@ -3,9 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import BackButton from '@/components/BackButton';
 import FloatingDock from '@/components/FloatingDock';
 import { rp, statusLabel } from '@/lib/format';
-import { api, NEXT, BADGE, PAYBADGE, PAYTEXT, chatUrl, reply, when } from './shared';
-
-const STEPS = ['baru', 'diproses', 'siap', 'selesai'];
+import { api, nextAction, BADGE, PAYBADGE, PAYTEXT, chatUrl, reply, when } from './shared';
 
 // Di luar komponen agar tidak dibuat ulang setiap render (input di dalamnya tetap punya fokus).
 function Shell({ children }) {
@@ -72,9 +70,10 @@ export default function OrderDetail({ code }) {
     return <Shell>{err ? <div role="alert" className="card p-6 text-warn-text">{err}</div> : <p className="text-ink-2">Memuat pesanan…</p>}</Shell>;
   }
 
-  const nx = NEXT[o.status];
-  const nxLabel = nx && (nx[1] || (o.mode === 'antar' ? 'Tandai diantar' : 'Siap diambil'));
-  const idx = STEPS.indexOf(o.status);
+  const nx = nextAction(o.status, o.mode);
+  const nxLabel = nx && (nx[1] || statusLabel(nx[0], o.mode));
+  const steps = o.mode === 'antar' ? ['baru', 'diproses', 'siap', 'diantar', 'selesai'] : ['baru', 'diproses', 'siap', 'selesai'];
+  const idx = steps.indexOf(o.status);
   const hasPay = o.payment !== 'Tunai';
   const verified = o.paymentStatus === 'terverifikasi';
 
@@ -89,8 +88,8 @@ export default function OrderDetail({ code }) {
           <span className={`rounded-full px-3 py-1 text-sm font-bold ${BADGE[o.status]}`}>{statusLabel(o.status, o.mode)}</span>
         </div>
         {o.status !== 'batal' && (
-          <ol className="grid grid-cols-4 gap-1 pt-1" aria-label="Tahap pesanan">
-            {STEPS.map((s, i) => (
+          <ol className={`grid ${o.mode === 'antar' ? 'grid-cols-5' : 'grid-cols-4'} gap-1 pt-1`} aria-label="Tahap pesanan">
+            {steps.map((s, i) => (
               <li key={s} className="flex flex-col items-center gap-1 text-center">
                 <span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${idx >= i ? 'bg-brand text-white' : 'bg-paper text-ink-2 ring-1 ring-line'}`} aria-current={idx === i ? 'step' : undefined}>
                   {idx > i ? '✓' : i + 1}
@@ -105,14 +104,15 @@ export default function OrderDetail({ code }) {
       <section className="sticky bottom-0 z-30 -mx-4 border-y border-line bg-card/95 p-3 backdrop-blur lg:static lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-4" aria-label="Aksi">
         <div className="flex flex-wrap items-center gap-2">
           {nx && <button className="btn min-h-11 flex-1 sm:flex-none sm:px-6" disabled={busy} onClick={() => act({ status: nx[0] }, `Status diubah ke ${statusLabel(nx[0], o.mode)}`)}>{nxLabel}</button>}
+          {o.status === 'siap' && o.mode === 'antar' && <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => act({ status: 'selesai' }, 'Pesanan diselesaikan manual')}>Tandai selesai (cadangan)</button>}
           {o.status === 'batal' && <button type="button" className="btn min-h-11 flex-1 sm:flex-none" disabled={busy} onClick={() => act({ status: 'baru' }, 'Pesanan diaktifkan lagi')}>Aktifkan lagi</button>}
           <a className="btn btn-wa btn-sm" target="_blank" rel="noopener noreferrer" href={chatUrl(o)}>Chat pembeli</a>
           <button type="button" className="btn btn-ghost btn-sm" onClick={copyReply}>{copied ? 'Tersalin' : 'Salin pesan'}</button>
-          {o.status !== 'batal' && o.status !== 'selesai' && !confirmCancel && <button type="button" className="btn btn-ghost btn-sm text-warn-text" onClick={() => setConfirmCancel(true)}>Batalkan</button>}
+          {o.status !== 'batal' && o.status !== 'selesai' && o.status !== 'diantar' && !confirmCancel && <button type="button" className="btn btn-ghost btn-sm text-warn-text" onClick={() => setConfirmCancel(true)}>Batalkan</button>}
         </div>
         {o.status === 'batal' ? (
           null
-        ) : confirmCancel && (
+        ) : confirmCancel && o.status !== 'diantar' && (
           <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-warn-soft p-3 text-warn-text">
             <span className="flex-1 font-semibold">Batalkan pesanan ini?</span>
             <button type="button" className="btn btn-sm bg-warn hover:bg-warn" disabled={busy} onClick={() => act({ status: 'batal' }, 'Pesanan dibatalkan')}>Ya, batalkan</button>
@@ -135,6 +135,7 @@ export default function OrderDetail({ code }) {
             </div>
           </>}
           {o.note && <p className="rounded-xl bg-paper p-3 text-sm">Catatan: {o.note}</p>}
+          {o.status === 'diantar' && <p role="status" className="rounded-xl bg-sky-soft p-3 font-semibold text-sky">Sedang diantar{o.shippedAt ? ` sejak ${new Date(o.shippedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '.')}` : ''}.</p>}
         </section>
 
         <section className="card order-2 p-5 lg:col-start-1 lg:row-start-1 lg:row-span-3">
@@ -203,11 +204,12 @@ export default function OrderDetail({ code }) {
         {o.mode === 'antar' && <section className="card order-4 space-y-3 p-5 lg:col-start-2 lg:row-start-2">
           <h2 className="text-lg font-bold">Kurir</h2>
           <label htmlFor="courier" className="block text-sm font-semibold">Tugaskan kurir</label>
-          <select id="courier" className="field" disabled={o.status === 'baru' || o.status === 'batal' || o.status === 'selesai' || busy} value={o.courierId || ''} onChange={(e) => act({ courier_id: e.target.value }, 'Penugasan kurir disimpan')}>
+          <select id="courier" className="field" disabled={o.status === 'baru' || o.status === 'diantar' || o.status === 'batal' || o.status === 'selesai' || busy} value={o.courierId || ''} onChange={(e) => act({ courier_id: e.target.value }, 'Penugasan kurir disimpan')}>
             <option value="">Belum ditugaskan</option>
             {couriers.filter((c) => c.active).map((c) => <option key={c.id} value={c.id}>{c.name} ({c.username})</option>)}
           </select>
           {o.status === 'baru' && <p className="text-sm text-ink-2">Terima pesanan dulu untuk memilih kurir.</p>}
+          {o.status === 'siap' && <p className="text-sm font-semibold text-ink-2">{o.courierId ? 'Menunggu kurir mengantar.' : 'Pilih kurir untuk mengantar.'}</p>}
         </section>}
       </div>
 
