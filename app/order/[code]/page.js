@@ -182,6 +182,8 @@ function Ticket({ code }) {
       <div className="flex flex-col gap-3">
         {o.status === 'selesai' ? (
           <div className="rounded-2xl bg-leaf-soft p-4 text-center font-semibold text-leaf">Pesanan sudah selesai. Terima kasih sudah memesan di Kaboba Time!</div>
+        ) : ['diproses', 'siap'].includes(o.status) ? (
+          <div role="status" className="rounded-2xl bg-sky-soft p-4 text-center font-semibold text-sky">Pesananmu sudah diterima penjual dan sedang disiapkan.</div>
         ) : waLink && o.status !== 'batal' && (
           <a href={waLink} target="_blank" rel="noopener noreferrer" className="btn btn-wa">Kirim pesanan ke WhatsApp</a>
         )}
