@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ProductImage from './ProductImage';
 import { rp } from '@/lib/format';
 
@@ -9,21 +9,32 @@ const INTERVAL = 4000;
 // berhenti saat tab tidak terlihat, dan tidak berganti otomatis bila pengguna meminta gerak minimal.
 export default function HeroCarousel({ items, onOpen }) {
   const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [touchPaused, setTouchPaused] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [reduce, setReduce] = useState(false);
+  const touchTimer = useRef(null);
   const n = items.length;
   const idx = n ? i % n : 0;
   const cur = items[idx];
+  const paused = hovered || focused || touchPaused;
 
   useEffect(() => {
     const m = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduce(m.matches);
+    const motion = () => setReduce(m.matches);
+    motion();
+    m.addEventListener('change', motion);
     const vis = () => setHidden(document.hidden);
     vis();
     document.addEventListener('visibilitychange', vis);
-    return () => document.removeEventListener('visibilitychange', vis);
+    return () => {
+      m.removeEventListener('change', motion);
+      document.removeEventListener('visibilitychange', vis);
+    };
   }, []);
+
+  useEffect(() => () => clearTimeout(touchTimer.current), []);
 
   useEffect(() => {
     if (n < 2 || paused || hidden || reduce) return undefined;
@@ -46,12 +57,18 @@ export default function HeroCarousel({ items, onOpen }) {
       aria-roledescription="carousel"
       aria-label="Menu pilihan"
       className="relative mx-auto w-full max-w-sm md:max-w-none"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
-      onTouchEnd={() => setTimeout(() => setPaused(false), 3000)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}
+      onTouchStart={() => {
+        clearTimeout(touchTimer.current);
+        setTouchPaused(true);
+      }}
+      onTouchEnd={() => {
+        clearTimeout(touchTimer.current);
+        touchTimer.current = setTimeout(() => setTouchPaused(false), 3000);
+      }}
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-3xl ring-4 ring-white/10 md:aspect-[5/4]">
         {items.map((p, k) => (

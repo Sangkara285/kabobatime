@@ -149,7 +149,12 @@ export default function Shop({ menu, error, store: info, settings }) {
   if (view === 'checkout')
     return (
       <Checkout cart={cart} live={live} bump={bump} subtotal={subtotal} settings={settings} refresh={refresh} removeSold={removeSold}
-        back={backToMenu} done={(code) => { setCart([]); store.set('kbt_last', code); router.push(`/order/${code}?baru=1`); }} />
+        back={backToMenu} done={(code, waUrl) => {
+          setCart([]);
+          store.set('kbt_last', code);
+          try { if (waUrl) sessionStorage.setItem(`kbt_wa_${code}`, waUrl); } catch { /* penyimpanan sesi dapat diblokir browser */ }
+          router.push(`/order/${code}?baru=1`);
+        }} />
     );
 
   return (
@@ -175,8 +180,8 @@ export default function Shop({ menu, error, store: info, settings }) {
       </header>
 
       <section className="relative isolate overflow-hidden rounded-[28px] bg-hero text-hero-ink">
-        <div aria-hidden className="absolute -right-16 -top-16 -z-10 h-72 w-72 rounded-full bg-brand/40 blur-3xl" />
-        <div aria-hidden className="absolute -bottom-24 left-1/3 -z-10 h-56 w-56 rounded-full bg-brand/25 blur-3xl" />
+        <div aria-hidden className="absolute -right-16 -top-16 -z-10 h-72 w-72 rounded-full bg-hero-accent/40 blur-3xl" />
+        <div aria-hidden className="absolute -bottom-24 left-1/3 -z-10 h-56 w-56 rounded-full bg-hero-accent/25 blur-3xl" />
         <div className="grid items-center gap-8 p-6 sm:p-8 md:grid-cols-2 md:gap-10">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[.18em] text-hero-muted">{info.area}</p>
@@ -239,7 +244,7 @@ export default function Shop({ menu, error, store: info, settings }) {
           {menu.categories.map((c) => (
             <section key={c.slug} id={'cat-' + c.slug} className="scroll-mt-20 pt-6">
               <h2 className="mb-3 text-2xl font-bold">{c.name}</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {c.products.map((p) => <ProductCard key={p.id} p={p} onOpen={() => setSheet(p)} />)}
               </div>
             </section>
@@ -300,28 +305,25 @@ function Overlay({ children, close, label }) {
   );
 }
 
-function SoldBadge({ p, small }) {
-  return <span className={`rounded-full bg-warn font-extrabold uppercase tracking-wider text-white ${small ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'}`}>{soldWord(p)}</span>;
-}
-
 function ProductCard({ p, onOpen }) {
   const sold = !p.available;
   return (
     <button type="button" aria-disabled={sold} onClick={sold ? undefined : onOpen}
-      className={`card flex gap-3 p-3 text-left transition ${sold ? 'cursor-not-allowed' : 'hover:border-brand/50 active:scale-[.99]'}`}>
-      <div className="relative h-28 w-28 shrink-0 sm:h-32 sm:w-32">
-        <ProductImage src={p.image} name={p.name} sold={sold} className="h-full w-full rounded-2xl" />
-        {sold && <div className="absolute inset-0 grid place-items-center rounded-2xl bg-black/50"><SoldBadge p={p} /></div>}
+      className={`card group flex min-w-0 flex-col overflow-hidden text-left shadow-[0_8px_22px_rgb(74_44_24_/_0.06)] transition duration-200 dark:shadow-[0_8px_22px_rgb(0_0_0_/_0.24)] ${sold ? 'cursor-not-allowed' : 'hover:-translate-y-0.5 hover:border-brand/50 hover:shadow-lg active:scale-[.99]'}`}>
+      <div className="relative aspect-[4/3] w-full">
+        <ProductImage src={p.image} name={p.name} sold={sold} className="h-full w-full" />
+        {p.featured && <span className="absolute left-3 top-3 rounded-full bg-brand px-3 py-1 text-xs font-extrabold text-white shadow">Populer</span>}
+        {sold && <span className="absolute left-0 top-5 rounded-r-full bg-warn px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-white shadow">{soldWord(p)}</span>}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <h3 className={`text-base font-bold leading-snug ${sold ? 'text-ink-2' : ''}`}>{p.name}</h3>
-        <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-ink-2">{p.description}</p>
-        {sold && p.sold_note && <p className="mt-1 text-xs font-semibold italic text-warn-text">{p.sold_note}</p>}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
-          <span className={`num font-bold ${sold ? 'text-ink-2 line-through' : ''}`}>{rp(p.price)}</span>
+      <div className="flex min-w-0 flex-1 flex-col p-4">
+        <h3 className={`text-lg font-extrabold leading-snug ${sold ? 'text-ink-2' : ''}`}>{p.name}</h3>
+        {p.description && <p className="mt-1 line-clamp-2 text-sm leading-snug text-ink-2">{p.description}</p>}
+        {sold && p.sold_note && <p className="mt-2 text-xs font-semibold italic text-warn-text">{p.sold_note}</p>}
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <span className={`num text-lg font-extrabold ${sold ? 'text-ink-2 line-through' : 'text-brand-dark'}`}>{rp(p.price)}</span>
           {sold
             ? <span className="rounded-full bg-warn-soft px-3 py-1.5 text-xs font-bold text-warn-text">{soldWord(p)}</span>
-            : <span aria-hidden className="grid h-10 w-10 place-items-center rounded-full bg-brand text-2xl leading-none text-white">+</span>}
+            : <span aria-hidden className="rounded-full bg-brand px-4 py-2 text-sm font-bold text-white transition duration-200 group-active:scale-95 group-hover:bg-brand-dark">Tambah +</span>}
         </div>
       </div>
     </button>
@@ -332,16 +334,17 @@ function FeaturedCard({ p, onOpen }) {
   const sold = !p.available;
   return (
     <button type="button" aria-disabled={sold} onClick={sold ? undefined : onOpen}
-      className={`card w-44 shrink-0 overflow-hidden text-left sm:w-48 ${sold ? 'cursor-not-allowed' : 'hover:border-brand/50'}`}>
+      className={`card w-44 shrink-0 overflow-hidden text-left shadow-[0_8px_22px_rgb(74_44_24_/_0.06)] transition duration-200 dark:shadow-[0_8px_22px_rgb(0_0_0_/_0.24)] sm:w-48 ${sold ? 'cursor-not-allowed' : 'hover:-translate-y-0.5 hover:border-brand/50 hover:shadow-lg active:scale-[.99]'}`}>
       <div className="relative">
         <ProductImage src={p.image} name={p.name} sold={sold} className="aspect-square w-full" />
-        {sold && <div className="absolute inset-0 grid place-items-center bg-black/50"><SoldBadge p={p} /></div>}
+        <span className="absolute left-2 top-2 rounded-full bg-brand px-2.5 py-1 text-[11px] font-extrabold text-white shadow">Populer</span>
+        {sold && <span className="absolute left-0 top-5 rounded-r-full bg-warn px-3 py-1.5 text-xs font-extrabold uppercase text-white shadow">{soldWord(p)}</span>}
       </div>
       <div className="p-3">
         <h3 className="line-clamp-2 text-[15px] font-bold leading-snug">{p.name}</h3>
         <div className="mt-2 flex items-center justify-between">
           <span className={`num font-bold ${sold ? 'text-ink-2 line-through' : ''}`}>{rp(p.price)}</span>
-          {!sold && <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full bg-brand text-xl leading-none text-white">+</span>}
+          {!sold && <span aria-hidden className="rounded-full bg-brand px-3 py-2 text-sm font-bold text-white">Tambah +</span>}
         </div>
       </div>
     </button>
@@ -533,7 +536,7 @@ function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, b
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { if (data.soldOut || data.reload) refresh(); throw new Error(data.error || 'Gagal membuat pesanan.'); }
       store.set('kbt_cust', { name: f.name, phone: f.phone, address: f.address, landmark: f.landmark, loc });
-      done(data.code);
+      done(data.code, data.waUrl);
     } catch (x) { setFail(x.message); setBusy(false); }
   }
 

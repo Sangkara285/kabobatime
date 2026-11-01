@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import BackButton from '@/components/BackButton';
 import FloatingDock from '@/components/FloatingDock';
+import OrderTimeline from '@/components/OrderTimeline';
 import { rp, statusLabel } from '@/lib/format';
 import { api, nextAction, BADGE, PAYBADGE, PAYTEXT, chatUrl, reply, when } from './shared';
 
@@ -72,8 +73,6 @@ export default function OrderDetail({ code }) {
 
   const nx = nextAction(o.status, o.mode);
   const nxLabel = nx && (nx[1] || statusLabel(nx[0], o.mode));
-  const steps = o.mode === 'antar' ? ['baru', 'diproses', 'siap', 'diantar', 'selesai'] : ['baru', 'diproses', 'siap', 'selesai'];
-  const idx = steps.indexOf(o.status);
   const hasPay = o.payment !== 'Tunai';
   const verified = o.paymentStatus === 'terverifikasi';
 
@@ -87,18 +86,7 @@ export default function OrderDetail({ code }) {
           </div>
           <span className={`rounded-full px-3 py-1 text-sm font-bold ${BADGE[o.status]}`}>{statusLabel(o.status, o.mode)}</span>
         </div>
-        {o.status !== 'batal' && (
-          <ol className={`grid ${o.mode === 'antar' ? 'grid-cols-5' : 'grid-cols-4'} gap-1 pt-1`} aria-label="Tahap pesanan">
-            {steps.map((s, i) => (
-              <li key={s} className="flex flex-col items-center gap-1 text-center">
-                <span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${idx >= i ? 'bg-brand text-white' : 'bg-paper text-ink-2 ring-1 ring-line'}`} aria-current={idx === i ? 'step' : undefined}>
-                  {idx > i ? '✓' : i + 1}
-                </span>
-                <span className={`text-[10px] font-semibold sm:text-xs ${idx >= i ? 'text-ink' : 'text-ink-2'}`}>{statusLabel(s, o.mode)}</span>
-              </li>
-            ))}
-          </ol>
-        )}
+        {o.status !== 'batal' && <OrderTimeline mode={o.mode} status={o.status} />}
       </section>
 
       <section className="sticky bottom-0 z-30 -mx-4 border-y border-line bg-card/95 p-3 backdrop-blur lg:static lg:mx-0 lg:rounded-2xl lg:border lg:bg-card lg:p-4" aria-label="Aksi">

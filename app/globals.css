@@ -14,6 +14,7 @@
   --line: 233 223 210;
   --brand: 184 83 6;
   --brand-dark: 143 63 4;
+  --brand-hover-ink: 255 255 255;
   --brand-soft: 252 233 212;
   --accent: 184 83 6;
   --leaf: 31 122 77;
@@ -36,6 +37,7 @@
   --line: 74 58 47;
   --brand: 184 83 6;
   --brand-dark: 255 154 77;
+  --brand-hover-ink: 42 27 18;
   --brand-soft: 70 40 20;
   --accent: 255 154 77;
   --leaf: 111 211 154;
@@ -62,7 +64,8 @@ h1, h2, h3 { @apply font-display; text-wrap: balance; }
 @layer components {
   .btn { @apply inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-3.5 font-bold text-white transition hover:bg-brand-dark active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50; }
   .btn-ghost { @apply bg-transparent text-ink ring-1 ring-inset ring-line hover:bg-brand-soft; }
-  .btn-wa { @apply bg-leaf-btn hover:brightness-110; }
+  .btn-wa { @apply bg-leaf-btn hover:bg-[#155D3A]; }
+  .btn:not(.btn-ghost):hover:not(:disabled) { color: rgb(var(--brand-hover-ink)); }
   .btn-sm { @apply w-auto rounded-xl px-3.5 py-2 text-sm; }
   .field { @apply w-full rounded-xl border border-line bg-paper px-3.5 py-3 text-base text-ink outline-none focus:border-brand; }
   .field::placeholder { color: rgb(var(--ink-2)); opacity: 1; }

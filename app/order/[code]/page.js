@@ -1,10 +1,11 @@
 'use client';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { rp, statusLabel } from '@/lib/format';
 import BackButton from '@/components/BackButton';
 import FloatingDock from '@/components/FloatingDock';
 import ThemeToggle from '@/components/ThemeToggle';
+import OrderTimeline from '@/components/OrderTimeline';
 
 const MAX_BYTES = 4 * 1024 * 1024;
 
@@ -59,11 +60,16 @@ function Ticket({ code }) {
   const fresh = search.get('baru') === '1';
   const [o, setO] = useState(null);
   const [waLink, setWaLink] = useState('');
+  const waLinkRef = useRef('');
   const [err, setErr] = useState('');
   const [expired, setExpired] = useState(false);
   const [at, setAt] = useState(null);
   const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    try { waLinkRef.current = sessionStorage.getItem(`kbt_wa_${code}`) || ''; } catch { waLinkRef.current = ''; }
+  }, [code]);
 
   const load = useCallback(async () => {
     try {
@@ -72,7 +78,13 @@ function Ticket({ code }) {
       if (r.status === 410) { setO(null); setExpired(true); setErr(''); return; }
       if (!r.ok) { setO(null); setErr(d.error || 'Pesanan tidak ditemukan.'); return; }
       setExpired(false);
-      setO(d.order); setWaLink(d.waUrl); setErr(''); setAt(Date.now());
+      setO(d.order);
+      setWaLink(d.order.status === 'baru' ? waLinkRef.current || d.waUrl : d.waUrl);
+      if (d.order.status !== 'baru') {
+        waLinkRef.current = '';
+        try { sessionStorage.removeItem(`kbt_wa_${code}`); } catch { /* penyimpanan sesi dapat diblokir browser */ }
+      }
+      setErr(''); setAt(Date.now());
     } catch { setErr('Tidak bisa terhubung. Periksa koneksi lalu coba lagi.'); }
   }, [code]);
 
@@ -82,7 +94,11 @@ function Ticket({ code }) {
     const t = setInterval(load, 10000);
     return () => clearInterval(t);
   }, [load, expired]);
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => {
+    if (expired) return undefined;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [expired]);
 
   async function copy() {
     try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* browser menolak */ }
@@ -105,8 +121,6 @@ function Ticket({ code }) {
   }
 
   const cancelled = o.status === 'batal';
-  const steps = o.mode === 'antar' ? ['baru', 'diproses', 'siap', 'diantar', 'selesai'] : ['baru', 'diproses', 'siap', 'selesai'];
-  const idx = steps.indexOf(o.status);
   const secs = at ? Math.max(0, Math.round((now - at) / 1000)) : null;
   const shippedTime = o.shippedAt ? new Date(o.shippedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '.') : '';
 
@@ -130,20 +144,15 @@ function Ticket({ code }) {
       {cancelled ? (
         <div role="alert" className="rounded-2xl bg-warn-soft p-4 font-semibold text-warn-text">Pesanan ini dibatalkan. Hubungi penjual lewat WhatsApp bila ada pertanyaan.</div>
       ) : (
-        <section className="card p-6" aria-label="Status pesanan">
-          <ol className="space-y-4">
-            {steps.map((s, i) => {
-              const done = idx >= i;
-              const current = idx === i;
-              return (
-                <li key={s} className="flex items-center gap-3" aria-current={current ? 'step' : undefined}>
-                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${done ? 'bg-leaf-btn text-white' : 'bg-paper text-ink-2 ring-1 ring-line'}`}>{done ? '✓' : i + 1}</span>
-                  <span className={`font-semibold ${done ? 'text-ink' : 'text-ink-2'}`}>{statusLabel(s, o.mode)}</span>
-                  {current && <span className="ml-auto rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand-dark">Sekarang</span>}
-                </li>
-              );
-            })}
-          </ol>
+        <section className="card p-5 sm:p-6" aria-label="Status pesanan">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-ink-2">Status terkini</p>
+              <p className="mt-1 text-lg font-extrabold">{statusLabel(o.status, o.mode)}</p>
+            </div>
+            <span className="rounded-full bg-brand-soft px-3 py-1 text-sm font-bold text-brand-dark">{o.mode === 'antar' ? 'Antar' : 'Ambil'}</span>
+          </div>
+          <OrderTimeline mode={o.mode} status={o.status} />
         </section>
       )}
       {o.status === 'diantar' && <p role="status" className="rounded-2xl bg-sky-soft p-4 font-semibold text-sky">Pesananmu sedang diantar kurir{shippedTime ? ` sejak pukul ${shippedTime}` : ''}{o.courierName ? ` · ${o.courierName}` : ''}.</p>}
