@@ -61,6 +61,7 @@ function Ticket({ code }) {
   const [o, setO] = useState(null);
   const [waLink, setWaLink] = useState('');
   const [err, setErr] = useState('');
+  const [expired, setExpired] = useState(false);
   const [at, setAt] = useState(null);
   const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
@@ -69,12 +70,18 @@ function Ticket({ code }) {
     try {
       const r = await fetch(`/api/orders/${code}`, { cache: 'no-store' });
       const d = await r.json().catch(() => ({}));
+      if (r.status === 410) { setO(null); setExpired(true); setErr(''); return; }
       if (!r.ok) { setO(null); setErr(d.error || 'Pesanan tidak ditemukan.'); return; }
+      setExpired(false);
       setO(d.order); setWaLink(d.waUrl); setErr(''); setAt(Date.now());
     } catch { setErr('Tidak bisa terhubung. Periksa koneksi lalu coba lagi.'); }
   }, [code]);
 
-  useEffect(() => { load(); const t = setInterval(load, 10000); return () => clearInterval(t); }, [load]);
+  useEffect(() => {
+    load();
+    const t = setInterval(() => { if (!expired) load(); }, 10000);
+    return () => clearInterval(t);
+  }, [load, expired]);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   async function copy() {
@@ -85,7 +92,13 @@ function Ticket({ code }) {
     return (
       <Shell>
         <BackButton href="/" label="Menu" />
-        {err ? <div role="alert" className="card p-6 text-warn-text">{err}</div> : <div className="card h-48 animate-pulse p-6" aria-label="Memuat" />}
+        {expired ? (
+          <div className="card space-y-4 p-6 text-center">
+            <h1 className="text-xl font-extrabold">Pelacakan selesai</h1>
+            <p className="text-ink-2">Pesanan ini sudah selesai dan halaman lacaknya sudah ditutup. Terima kasih!</p>
+            <a href="/" className="btn inline-flex">Kembali ke menu</a>
+          </div>
+        ) : err ? <div role="alert" className="card p-6 text-warn-text">{err}</div> : <div className="card h-48 animate-pulse p-6" aria-label="Memuat" />}
         <FloatingDock />
       </Shell>
     );
@@ -167,7 +180,9 @@ function Ticket({ code }) {
       </section>
 
       <div className="flex flex-col gap-3">
-        {waLink && o.status === 'baru' && (
+        {o.status === 'selesai' ? (
+          <div className="rounded-2xl bg-leaf-soft p-4 text-center font-semibold text-leaf">Pesanan sudah selesai. Terima kasih sudah memesan di Kaboba Time!</div>
+        ) : waLink && o.status !== 'batal' && (
           <a href={waLink} target="_blank" rel="noopener noreferrer" className="btn btn-wa">Kirim pesanan ke WhatsApp</a>
         )}
         <a href="/" className="btn btn-ghost">Pesan lagi</a>

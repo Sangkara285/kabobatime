@@ -47,6 +47,12 @@ await addColumn('orders', 'discount_amount', 'INT NOT NULL DEFAULT 0');
 await addColumn('orders', 'cash_received', 'INT NULL');
 await addColumn('orders', 'cash_change', 'INT NULL');
 await addColumn('orders', 'cash_paid_at', 'DATETIME NULL');
+await addColumn('orders', 'courier_id', 'INT NULL');
+await conn.query('CREATE TABLE IF NOT EXISTS couriers (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(80) NOT NULL, username VARCHAR(40) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL, phone VARCHAR(30) NULL, active TINYINT(1) NOT NULL DEFAULT 1, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+const [[fk]] = await conn.query("SELECT COUNT(*) AS n FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME='orders' AND COLUMN_NAME='courier_id' AND REFERENCED_TABLE_NAME='couriers'", [dbName]);
+if (!fk.n) {
+  try { await conn.query('ALTER TABLE orders ADD CONSTRAINT fk_orders_courier FOREIGN KEY (courier_id) REFERENCES couriers(id) ON DELETE SET NULL'); } catch (e) { if (!['ER_DUP_KEY', 'ER_CANT_CREATE_TABLE'].includes(e.code)) throw e; }
+}
 await conn.query('ALTER TABLE categories MODIFY slug VARCHAR(80) NOT NULL');
 await conn.query('ALTER TABLE products MODIFY slug VARCHAR(120) NOT NULL');
 
