@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
 
@@ -9,6 +9,13 @@ export default function CourierLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let active = true;
+    fetch('/api/kurir/login', { method: 'DELETE' })
+      .then((response) => { if (!response.ok) throw new Error('Sesi sebelumnya belum bisa dibersihkan.'); })
+      .catch(() => { if (active) setError('Sesi sebelumnya belum bisa dibersihkan. Muat ulang halaman lalu coba lagi.'); });
+    return () => { active = false; };
+  }, []);
   async function submit(e) {
     e.preventDefault(); setBusy(true); setError('');
     const r = await fetch('/api/kurir/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { courierId, isKurir } from '@/lib/courier-auth';
+import { clearCourierCookie, courierId } from '@/lib/courier-auth';
 import { pool } from '@/lib/db';
 import { loadOrder } from '@/lib/orders';
 
 export async function PATCH(req, { params }) {
-  const id = courierId();
-  if (!isKurir() || id === null) return NextResponse.json({ error: 'Belum masuk.' }, { status: 401 });
+  const id = await courierId();
+  if (id === null) return clearCourierCookie(NextResponse.json({ error: 'Belum masuk.' }, { status: 401 }));
   const body = await req.json().catch(() => ({}));
   if (!['diantar', 'selesai'].includes(body.status)) return NextResponse.json({ error: 'Status kurir tidak valid.' }, { status: 400 });
   const code = String(params.code).toUpperCase();

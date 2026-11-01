@@ -5,6 +5,6 @@ import CourierLogin from '@/components/courier/CourierLogin';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Kurir · Kaboba Time', robots: { index: false, follow: false } };
 
-export default function CourierPage() {
-  return isKurir() ? <CourierApp /> : <CourierLogin />;
+export default async function CourierPage() {
+  return await isKurir() ? <CourierApp /> : <CourierLogin />;
 }
