@@ -353,6 +353,7 @@ export function SettingsAdmin({ notify }) {
           <Field id="s-max" label="Jangkauan maks (km)" inputMode="numeric" value={f.max_km} onChange={set('max_km')} />
         </div>
         <Field id="s-free" label="Gratis ongkir mulai belanja (Rp)" inputMode="numeric" value={f.free_above} onChange={set('free_above')} hint="Isi 0 bila tidak ada gratis ongkir." />
+        <Field id="s-discount" label="Diskon semua pesanan (%)" inputMode="decimal" value={f.discount_percent} onChange={set('discount_percent')} hint="Diskon dihitung dari subtotal. Isi 0 bila tidak ada diskon." />
       </section>
       {err && <p role="alert" className="rounded-xl bg-warn-soft p-3 text-warn-text">{err}</p>}
       <button className="btn" disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan pengaturan'}</button>

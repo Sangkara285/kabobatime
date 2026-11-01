@@ -22,7 +22,7 @@ export async function PATCH(req, { params }) {
   const code = String(params.code).toUpperCase();
   const b = await req.json().catch(() => ({}));
   try {
-    const [[o]] = await pool().query('SELECT id, payment_proof FROM orders WHERE code = ?', [code]);
+    const [[o]] = await pool().query('SELECT id, payment, total, payment_proof FROM orders WHERE code = ?', [code]);
     if (!o) return err('Pesanan tidak ditemukan.', 404);
 
     if (b.status !== undefined) {
@@ -36,6 +36,16 @@ export async function PATCH(req, { params }) {
       if (!o.payment_proof) return err('Belum ada bukti pembayaran untuk pesanan ini.', 409);
       const note = b.payment === 'ditolak' ? flat(b.note).slice(0, 160) || 'Bukti tidak jelas, mohon kirim ulang.' : null;
       await pool().query('UPDATE orders SET payment_status = ?, payment_reject_note = ? WHERE id = ?', [b.payment, note, o.id]);
+    }
+
+    if (b.cash_received !== undefined) {
+      if (o.payment !== 'Tunai') return err('Pencatatan uang diterima hanya untuk pembayaran tunai.', 400);
+      const received = Number(b.cash_received);
+      if (!Number.isInteger(received) || received < o.total) return err('Uang diterima harus berupa angka bulat dan minimal sama dengan total.', 400);
+      await pool().query(
+        "UPDATE orders SET cash_received = ?, cash_change = ?, cash_paid_at = NOW(), payment_status = 'terverifikasi', payment_reject_note = NULL WHERE id = ?",
+        [received, received - o.total, o.id],
+      );
     }
 
     return NextResponse.json({ ok: true, order: await loadOrder(code, { seller: true }) }, { headers: NO_STORE });

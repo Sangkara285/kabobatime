@@ -5,14 +5,14 @@ import { MAX_BYTES, removeProof, saveProof, sniff } from '@/lib/uploads';
 export const dynamic = 'force-dynamic';
 const bad = (error, status = 400) => NextResponse.json({ error }, { status });
 
-// Pembeli mengunggah bukti transfer atau foto pembayaran QRIS untuk pesanannya.
+// Pembeli mengunggah foto pembayaran QRIS untuk pesanannya.
 export async function POST(req, { params }) {
   try {
     const code = String(params.code).toUpperCase();
     const [[o]] = await pool().query('SELECT id, status, payment, payment_status, payment_proof FROM orders WHERE code = ?', [code]);
     if (!o) return bad('Kode order tidak ditemukan.', 404);
     if (o.status === 'batal') return bad('Pesanan ini sudah dibatalkan.', 409);
-    if (!['QRIS', 'Transfer'].includes(o.payment)) return bad('Pesanan ini dibayar tunai, jadi tidak perlu bukti pembayaran.', 400);
+    if (o.payment !== 'QRIS') return bad('Pesanan ini dibayar tunai, jadi tidak perlu bukti pembayaran.', 400);
     if (o.payment_status === 'terverifikasi') return bad('Pembayaran pesanan ini sudah terverifikasi.', 409);
 
     let file;

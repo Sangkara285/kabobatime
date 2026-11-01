@@ -446,7 +446,6 @@ function Sheet({ p, addons, close, add }) {
 
 const PAY_OPTIONS = [
   ['Tunai', 'bayar saat terima'],
-  ['Transfer', 'transfer, lalu kirim bukti'],
   ['QRIS', 'scan QRIS, lalu kirim bukti'],
 ];
 
@@ -489,7 +488,8 @@ function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, b
   const fee = f.mode === 'ambil' ? 0 : quote?.ok ? quote.fee : 0;
   const feeKnown = f.mode === 'ambil' || (quote?.ok && !quoting);
   const far = f.mode === 'antar' && quote?.ok && !quote.withinRange;
-  const total = subtotal + fee;
+  const discount = Math.min(subtotal, Math.round(subtotal * (Number(settings.discount_percent) || 0) / 100));
+  const total = subtotal - discount + fee;
   const canSubmit = !busy && !soldLines.length && subtotal > 0 && !far && (f.mode === 'ambil' || (quote?.ok && !quoting));
 
   async function submit(e) {
@@ -587,6 +587,7 @@ function Checkout({ cart, live, bump, subtotal, settings, refresh, removeSold, b
         <h2 className="mb-3 text-lg font-bold">Ringkasan</h2>
         <div className="space-y-1.5">
           <div className="flex justify-between"><span>Subtotal</span><span className="num">{rp(subtotal)}</span></div>
+          {discount > 0 && <div className="flex justify-between text-leaf"><span>Diskon</span><span className="num">-{rp(discount)}</span></div>}
           <div className="flex justify-between gap-3">
             <span>{f.mode === 'antar' ? 'Ongkir' : 'Ambil di outlet'}</span>
             <span className={`num text-right ${feeKnown && !fee ? 'font-bold text-leaf' : ''}`}>

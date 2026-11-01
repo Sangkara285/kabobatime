@@ -5,9 +5,10 @@ import { api } from './shared';
 
 const pad = (n) => String(n).padStart(2, '0');
 const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const today = () => iso(new Date());
-const subtract = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d); };
-const monthStart = () => { const d = new Date(); d.setDate(1); return iso(d); };
+const businessToday = () => { const d = new Date(); if (d.getHours() < 16) d.setDate(d.getDate() - 1); return iso(d); };
+const today = businessToday;
+const subtract = (n) => { const d = new Date(`${businessToday()}T12:00:00`); d.setDate(d.getDate() - n); return iso(d); };
+const monthStart = () => { const d = new Date(`${businessToday()}T12:00:00`); d.setDate(1); return iso(d); };
 const csvCell = (v) => `"${String(v ?? '').replaceAll('"', '""')}"`;
 
 export default function RevenueTab() {
@@ -30,11 +31,12 @@ export default function RevenueTab() {
   const maxDaily = useMemo(() => Math.max(1, ...(data?.daily || []).map((r) => r.revenue)), [data]);
   const download = () => {
     if (!data) return;
-    const rows = [['Tanggal', 'Pesanan selesai', 'Pendapatan'], ...data.daily.map((r) => [r.date, r.orders, r.revenue])];
+    const rows = [['Tanggal', 'Pesanan selesai', 'Pendapatan kotor', 'Diskon', 'Pendapatan bersih'], ...data.daily.map((r) => [r.date, r.orders, r.grossRevenue, r.discounts, r.revenue])];
     const csv = `\uFEFF${rows.map((r) => r.map(csvCell).join(';')).join('\r\n')}`;
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = `rekap-pendapatan-${data.from}-${data.to}.csv`; a.click(); URL.revokeObjectURL(url);
   };
+  const downloadPdf = () => { window.open(`/api/seller/revenue/pdf?dari=${data.from}&sampai=${data.to}`, '_blank', 'noopener,noreferrer'); };
 
   return (
     <div className="space-y-5">
@@ -53,12 +55,13 @@ export default function RevenueTab() {
       {data && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Card label="Pendapatan selesai" value={rp(data.summary.revenue)} />
+            <Card label="Pendapatan bersih" value={rp(data.summary.revenue)} />
+            <Card label="Diskon" value={rp(data.summary.discounts)} />
             <Card label="Pesanan selesai" value={data.summary.completedOrders} />
             <Card label="Masih berjalan" value={data.summary.runningOrders} />
             <Card label="Dibatalkan" value={data.summary.cancelledOrders} />
           </div>
-          <section className="card space-y-3 p-5"><div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold">Pendapatan per hari</h2><button className="btn btn-ghost btn-sm" onClick={download}>Unduh CSV</button></div>
+          <section className="card space-y-3 p-5"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold">Pendapatan per hari</h2><div className="flex gap-2"><button className="btn btn-ghost btn-sm" onClick={download}>Unduh CSV</button><button className="btn btn-ghost btn-sm" onClick={downloadPdf}>Unduh PDF</button></div></div>
             {data.daily.length ? data.daily.map((r) => <div key={r.date} className="space-y-1"><div className="flex justify-between gap-2 text-sm"><span>{r.date} · {r.orders} pesanan</span><b>{rp(r.revenue)}</b></div><div className="h-2 rounded-full bg-paper"><div className="h-2 rounded-full bg-brand" style={{ width: `${Math.max(3, r.revenue / maxDaily * 100)}%` }} /></div></div>) : <p className="text-ink-2">Belum ada pesanan selesai.</p>}
           </section>
           <div className="grid gap-5 lg:grid-cols-3">

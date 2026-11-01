@@ -16,7 +16,7 @@ export async function POST(req) {
   const phone = flat(b.phone).slice(0, 30);
   const mode = b.mode === 'ambil' ? 'ambil' : 'antar';
   const address = flat(b.address).slice(0, 400);
-  const payment = ['Tunai', 'Transfer', 'QRIS'].includes(b.payment) ? b.payment : 'Tunai';
+  const payment = ['Tunai', 'QRIS'].includes(b.payment) ? b.payment : 'Tunai';
   const note = flat(b.note).slice(0, 240);
   const digits = phone.replace(/\D/g, '');
 
@@ -62,7 +62,8 @@ export async function POST(req) {
     if (!q.withinRange) return bad(`Lokasi kamu ${q.km} km dari outlet, di luar jangkauan antar (maks ${q.maxKm} km). Pilih ambil sendiri atau hubungi kami lewat WhatsApp.`);
     fee = q.fee; lat = Number(b.lat); lng = Number(b.lng); km = q.km; source = q.source;
   }
-  const total = subtotal + fee;
+  const discount = Math.min(subtotal, Math.round(subtotal * (Number(settings.discount_percent) || 0) / 100));
+  const total = subtotal - discount + fee;
 
   const conn = await pool().getConnection();
   try {
@@ -72,9 +73,9 @@ export async function POST(req) {
       code = genCode();
       try {
         const [r] = await conn.query(
-          `INSERT INTO orders (code, customer_name, phone, mode, address, lat, lng, distance_km, distance_source, payment, note, subtotal, fee, total)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-          [code, name, phone, mode, mode === 'antar' ? address : null, lat, lng, km, source, payment, note || null, subtotal, fee, total]);
+          `INSERT INTO orders (code, customer_name, phone, mode, address, lat, lng, distance_km, distance_source, payment, note, subtotal, discount_amount, fee, total)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [code, name, phone, mode, mode === 'antar' ? address : null, lat, lng, km, source, payment, note || null, subtotal, discount, fee, total]);
         orderId = r.insertId; break;
       } catch (e) { if (e.code !== 'ER_DUP_ENTRY' || t === 5) throw e; }
     }

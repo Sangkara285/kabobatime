@@ -44,6 +44,10 @@ await addColumn('orders', 'payment_proof_at', 'DATETIME NULL');
 await addColumn('orders', 'payment_reject_note', 'VARCHAR(160) NULL');
 await addColumn('orders', 'completed_at', 'DATETIME NULL');
 await addColumn('orders', 'wa_proof_at', 'DATETIME NULL');
+await addColumn('orders', 'discount_amount', 'INT NOT NULL DEFAULT 0');
+await addColumn('orders', 'cash_received', 'INT NULL');
+await addColumn('orders', 'cash_change', 'INT NULL');
+await addColumn('orders', 'cash_paid_at', 'DATETIME NULL');
 await conn.query('ALTER TABLE categories MODIFY slug VARCHAR(80) NOT NULL');
 await conn.query('ALTER TABLE products MODIFY slug VARCHAR(120) NOT NULL');
 

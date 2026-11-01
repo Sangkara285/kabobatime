@@ -204,6 +204,7 @@ function OrdersTab({ notify }) {
                     {o.waProofAt && <span className="rounded-full bg-sky-soft px-2.5 py-1 text-sky">Bukti dikirim lewat WhatsApp · {when(o.waProofAt)}</span>}
                   </div>
                 )}
+                {!hasPay && <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-bold ${o.cashPaidAt ? 'bg-leaf-soft text-leaf' : 'bg-paper text-ink-2 ring-1 ring-line'}`}>{o.cashPaidAt ? 'Tunai dicatat' : 'Tunai belum dicatat'}</span>}
 
                 <div className="break-words text-sm">
                   <b>{o.name}</b><br />{o.phone} · {o.mode === 'antar' ? 'Antar' : 'Ambil'} · {o.payment}
@@ -217,6 +218,7 @@ function OrdersTab({ notify }) {
                       {it.addons.length > 0 && <small className="block text-ink-2">+ {it.addons.map((a) => a.name.replace('Ekstra ', '')).join(', ')}</small>}
                       {it.note && <small className="block text-ink-2">“{it.note}”</small>}</span><span className="num">{rp(it.price * it.qty)}</span></li>
                   ))}
+                  {o.discount > 0 && <li className="flex justify-between text-leaf"><span>Diskon</span><span className="num">-{rp(o.discount)}</span></li>}
                   {o.fee > 0 && <li className="flex justify-between text-ink-2"><span>Ongkir</span><span className="num">{rp(o.fee)}</span></li>}
                   <li className="flex justify-between font-bold"><span>Total</span><span className="num">{rp(o.total)}</span></li>
                 </ul>

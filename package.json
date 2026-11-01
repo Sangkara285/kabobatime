@@ -9,11 +9,12 @@
     "db:setup": "node scripts/setup-db.mjs"
   },
   "dependencies": {
+    "leaflet": "^1.9.4",
     "mysql2": "^3.11.3",
     "next": "14.2.15",
+    "pdfkit": "^0.20.2",
     "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "leaflet": "^1.9.4"
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",

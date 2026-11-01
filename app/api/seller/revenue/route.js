@@ -27,25 +27,33 @@ export async function GET(req) {
   if (days > 366) return bad('Rentang tanggal maksimal 366 hari.');
 
   const db = pool();
-  const range = `created_at >= CONCAT(?, ' 00:00:00') AND created_at < DATE_ADD(CONCAT(?, ' 00:00:00'), INTERVAL 1 DAY)`;
+  const range = `(
+    CASE WHEN TIME(created_at) < '16:00:00'
+      THEN DATE_SUB(DATE(created_at), INTERVAL 1 DAY)
+      ELSE DATE(created_at)
+    END
+  ) BETWEEN ? AND ?`;
   const [summaryRows] = await db.query(
     `SELECT
        COUNT(*) AS total_orders,
        COALESCE(SUM(status = 'selesai'), 0) AS completed_orders,
        COALESCE(SUM(status IN ('baru', 'diproses', 'siap')), 0) AS running_orders,
        COALESCE(SUM(status = 'batal'), 0) AS cancelled_orders,
+       COALESCE(SUM(CASE WHEN status = 'selesai' THEN subtotal ELSE 0 END), 0) AS gross_revenue,
+       COALESCE(SUM(CASE WHEN status = 'selesai' THEN discount_amount ELSE 0 END), 0) AS discounts,
        COALESCE(SUM(CASE WHEN status = 'selesai' THEN total ELSE 0 END), 0) AS revenue
      FROM orders WHERE ${range}`,
     [from, to],
   );
   const [dailyRows] = await db.query(
-    `SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS date, COUNT(*) AS orders, COALESCE(SUM(total), 0) AS revenue
+    `SELECT DATE_FORMAT(CASE WHEN TIME(created_at) < '16:00:00' THEN DATE_SUB(DATE(created_at), INTERVAL 1 DAY) ELSE DATE(created_at) END, '%Y-%m-%d') AS date,
+       COUNT(*) AS orders, COALESCE(SUM(subtotal), 0) AS gross_revenue, COALESCE(SUM(discount_amount), 0) AS discounts, COALESCE(SUM(total), 0) AS revenue
      FROM orders WHERE status = 'selesai' AND ${range}
-     GROUP BY DATE(created_at) ORDER BY date`,
+     GROUP BY CASE WHEN TIME(created_at) < '16:00:00' THEN DATE_SUB(DATE(created_at), INTERVAL 1 DAY) ELSE DATE(created_at) END ORDER BY date`,
     [from, to],
   );
   const [paymentRows] = await db.query(
-    `SELECT payment, COUNT(*) AS orders, COALESCE(SUM(total), 0) AS revenue
+    `SELECT payment, COUNT(*) AS orders, COALESCE(SUM(subtotal), 0) AS gross_revenue, COALESCE(SUM(discount_amount), 0) AS discounts, COALESCE(SUM(total), 0) AS revenue
      FROM orders WHERE status = 'selesai' AND ${range}
      GROUP BY payment ORDER BY revenue DESC`,
     [from, to],
@@ -68,13 +76,15 @@ export async function GET(req) {
     from, to,
     summary: {
       revenue: asMoney(s.revenue),
+      grossRevenue: asMoney(s.gross_revenue),
+      discounts: asMoney(s.discounts),
       completedOrders: Number(s.completed_orders || 0),
       runningOrders: Number(s.running_orders || 0),
       cancelledOrders: Number(s.cancelled_orders || 0),
       totalOrders: Number(s.total_orders || 0),
     },
-    daily: dailyRows.map((r) => ({ date: r.date, orders: Number(r.orders), revenue: asMoney(r.revenue) })),
-    paymentMethods: paymentRows.map((r) => ({ payment: r.payment, orders: Number(r.orders), revenue: asMoney(r.revenue) })),
+    daily: dailyRows.map((r) => ({ date: r.date, orders: Number(r.orders), grossRevenue: asMoney(r.gross_revenue), discounts: asMoney(r.discounts), revenue: asMoney(r.revenue) })),
+    paymentMethods: paymentRows.map((r) => ({ payment: r.payment, orders: Number(r.orders), grossRevenue: asMoney(r.gross_revenue), discounts: asMoney(r.discounts), revenue: asMoney(r.revenue) })),
     topProducts: productRows.map((r) => ({ name: r.name, quantity: Number(r.quantity), revenue: asMoney(r.revenue) })),
     busyHours: hourRows.map((r) => ({ hour: Number(r.hour), orders: Number(r.orders), revenue: asMoney(r.revenue) })),
   }, { headers: NO_STORE });

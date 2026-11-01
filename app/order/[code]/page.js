@@ -158,6 +158,7 @@ function Ticket({ code }) {
         </ul>
         <div className="mt-3 space-y-1 border-t border-dashed border-line pt-3 text-sm">
           <div className="flex justify-between"><span>Subtotal</span><span className="num">{rp(o.subtotal)}</span></div>
+          {o.discount > 0 && <div className="flex justify-between text-leaf"><span>Diskon</span><span className="num">-{rp(o.discount)}</span></div>}
           <div className="flex justify-between"><span>Ongkir</span><span className="num">{o.fee ? rp(o.fee) : 'Gratis'}</span></div>
           <div className="flex justify-between pt-1 text-lg font-extrabold"><span>Total</span><span className="num">{rp(o.total)}</span></div>
           <div className="flex justify-between pt-2 text-ink-2"><span>Pembayaran</span><span>{o.payment}</span></div>
@@ -178,7 +179,7 @@ function Ticket({ code }) {
   );
 }
 
-// Panel QRIS dan bukti pembayaran. Hanya tampil untuk pesanan QRIS atau Transfer.
+// Panel QRIS dan bukti pembayaran. Hanya tampil untuk pesanan QRIS.
 function PaymentPanel({ o, code, reload, waLink }) {
   const [qrMissing, setQrMissing] = useState(false);
   const [file, setFile] = useState(null);
@@ -262,10 +263,6 @@ function PaymentPanel({ o, code, reload, waLink }) {
         </div>
       )}
 
-      {o.payment === 'Transfer' && !verified && (
-        <p className="text-ink-2">Transfer <b className="text-ink">{rp(o.total)}</b> ke rekening penjual. Nomor rekening dikirim penjual lewat WhatsApp, lalu kirim bukti transfer di bawah.</p>
-      )}
-
       {verified && <p role="status" className="rounded-xl bg-leaf-soft p-3 font-semibold text-leaf">Pembayaranmu sudah terverifikasi. Terima kasih!</p>}
       {o.paymentStatus === 'menunggu' && !verified && <p role="status" className="rounded-xl bg-sky-soft p-3 font-semibold text-sky">Bukti sudah dikirim dan menunggu verifikasi penjual.</p>}
       {o.paymentStatus === 'ditolak' && <p role="alert" className="rounded-xl bg-warn-soft p-3 font-semibold text-warn-text">Bukti ditolak: {o.paymentNote}. Silakan kirim ulang.</p>}
@@ -273,7 +270,7 @@ function PaymentPanel({ o, code, reload, waLink }) {
       {!verified && (
         <form onSubmit={send} className="space-y-3">
           <div>
-            <label htmlFor="bukti" className="mb-1.5 block font-semibold">Foto bukti transfer / pembayaran</label>
+            <label htmlFor="bukti" className="mb-1.5 block font-semibold">Foto bukti pembayaran QRIS</label>
             <input id="bukti" type="file" accept="image/jpeg,image/png,image/webp" onChange={pick} disabled={busy}
               className="block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-brand file:px-4 file:py-2.5 file:font-bold file:text-white hover:file:bg-brand-dark" />
             <p className="mt-1 text-xs text-ink-2">JPG, PNG, atau WebP, maksimal 4 MB.</p>
@@ -307,7 +304,7 @@ function proofMessage(o) {
   } else {
     L.push('', 'Ambil di outlet');
   }
-  L.push('', `Subtotal: ${rp(o.subtotal)}`, `Ongkir: ${o.fee ? rp(o.fee) : 'Gratis'}`, `*Total: ${rp(o.total)}*`);
+  L.push('', `Subtotal: ${rp(o.subtotal)}`, ...(o.discount ? [`Diskon: -${rp(o.discount)}`] : []), `Ongkir: ${o.fee ? rp(o.fee) : 'Gratis'}`, `*Total: ${rp(o.total)}*`);
   if (o.note) L.push(`Catatan pesanan: ${o.note}`);
   return L.join('\n');
 }

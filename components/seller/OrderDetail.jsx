@@ -73,6 +73,7 @@ export default function OrderDetail({ code }) {
   const idx = STEPS.indexOf(o.status);
   const hasPay = o.payment !== 'Tunai';
   const verified = o.paymentStatus === 'terverifikasi';
+  const [cashReceived, setCashReceived] = useState('');
 
   return (
     <Shell>
@@ -148,6 +149,7 @@ export default function OrderDetail({ code }) {
         </ul>
         <div className="mt-3 space-y-1 border-t border-dashed border-line pt-3">
           <div className="flex justify-between"><span>Subtotal</span><span className="num">{rp(o.subtotal)}</span></div>
+          {o.discount > 0 && <div className="flex justify-between text-leaf"><span>Diskon</span><span className="num">-{rp(o.discount)}</span></div>}
           <div className="flex justify-between"><span>Ongkir</span><span className="num">{o.fee ? rp(o.fee) : 'Gratis'}</span></div>
           <div className="flex justify-between text-lg font-extrabold"><span>Total</span><span className="num">{rp(o.total)}</span></div>
         </div>
@@ -160,6 +162,17 @@ export default function OrderDetail({ code }) {
         </div>
 
         {!hasPay && <p className="text-ink-2">Dibayar tunai saat pesanan diterima. Tidak perlu bukti pembayaran.</p>}
+        {!hasPay && !o.cashPaidAt && (
+          <div className="space-y-2 rounded-2xl bg-paper p-3">
+            <label htmlFor="cash-received" className="block font-semibold">Uang tunai diterima (Rp)</label>
+            <div className="flex gap-2">
+              <input id="cash-received" className="field" inputMode="numeric" value={cashReceived} onChange={(e) => setCashReceived(e.target.value.replace(/\D/g, ''))} placeholder={String(o.total)} />
+              <button type="button" className="btn shrink-0" disabled={busy || !cashReceived} onClick={() => act({ cash_received: Number(cashReceived) }, 'Pembayaran tunai dicatat')}>Catat tunai</button>
+            </div>
+            <p className="text-xs text-ink-2">Total {rp(o.total)}. Kembalian dihitung otomatis.</p>
+          </div>
+        )}
+        {!hasPay && o.cashPaidAt && <p className="rounded-xl bg-leaf-soft p-3 font-semibold text-leaf">Tunai diterima {rp(o.cashReceived)} · Kembalian {rp(o.cashChange)}.</p>}
         {hasPay && o.waProofAt && <p className="rounded-xl bg-sky-soft p-3 text-sm font-semibold text-sky">Pembeli membagikan bukti lewat WhatsApp pada {when(o.waProofAt)}. Cek foto di bawah, lalu verifikasi atau tolak.</p>}
 
         {hasPay && !o.proofUrl && <p className="text-ink-2">Pembeli belum mengunggah bukti pembayaran.</p>}

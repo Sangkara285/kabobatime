@@ -15,6 +15,8 @@ Next.js 14 (App Router) + Tailwind CSS + Node.js (API routes) + MySQL.
 - **Habis / Kosong**: tombol "Tandai habis" memilih label **Habis** atau **Kosong** plus keterangan untuk pembeli (contoh: "kembali besok jam 10"). Di toko produk itu tampil abu-abu dengan label, tidak bisa dipesan, dan muncul di banner "Sedang tidak tersedia". Pembeli yang sudah memasukkannya ke keranjang diberi tahu dan tidak bisa checkout sebelum menghapusnya. Server juga menolak pesanan yang berisi produk habis.
 - **Kategori**: tambah, ubah nama, urutkan, hapus (ditolak bila masih berisi produk).
 - **Pengaturan**: nomor WhatsApp penjual, jam buka, koordinat outlet, ongkir per km, jangkauan maksimal, gratis ongkir (opsional).
+- Diskon global dapat diatur penjual dalam persen dari subtotal. Rekap pendapatan memisahkan pendapatan kotor, diskon, dan pendapatan bersih. Hari operasional berganti pukul 16.00.
+- Pembayaran yang tersedia adalah tunai dan QRIS. Untuk tunai, penjual mencatat uang diterima dan sistem menghitung kembalian.
 
 ## Menjalankan di Windows (PowerShell)
 Prasyarat: Node.js 18 atau lebih baru dan MySQL yang menyala (XAMPP, Laragon, atau MySQL Server).
@@ -41,11 +43,11 @@ Produksi: `npm run build` lalu `npm start`.
 - Foto bawaan ada di `public/menu/`.
 - Menambah menu awal lewat kode: edit `lib/seed-data.js` lalu `npm run db:setup`. Cara paling mudah tetap lewat `/penjual`.
 
-## Pembayaran QRIS dan bukti transfer
+## Pembayaran tunai dan QRIS
 - Taruh gambar QRIS penjual di `public/qris.png`. Pembeli yang memilih QRIS melihat gambar itu setelah memesan, bisa mengunduhnya dalam ukuran asli, lalu mengunggah bukti pembayaran.
-- Bukti disimpan di `uploads/proofs/` dan hanya bisa dibuka oleh penjual yang sudah masuk (`/api/seller/proofs/...`). Pembeli tidak pernah menerima alamat file itu.
+- Pembayaran tunai dicatat penjual dengan jumlah uang diterima; sistem menghitung kembalian. Bukti QRIS disimpan di `uploads/proofs/` dan hanya bisa dibuka oleh penjual yang sudah masuk (`/api/seller/proofs/...`). Pembeli tidak pernah menerima alamat file itu.
 - Penjual membuka detail pesanan (ketuk kartu pesanan), memperbesar bukti, lalu memverifikasi atau menolaknya dengan alasan yang terlihat pembeli.
-- Tombol "Bagikan bukti ke WhatsApp" mengirim gambar bersama detail pesanan bila browser mendukung berbagi file. Jika tidak, detail pesanan dibuka di WhatsApp dan gambarnya dilampirkan manual.
+- Tombol "Kirim detail pesanan ke WhatsApp penjual" membuka chat seller dengan detail pesanan. Foto bukti tetap tersedia di dashboard seller; WhatsApp tidak dapat melampirkan foto otomatis dari tautan web.
 
 ## Tema terang dan gelap
 Tombol matahari/bulan di header mengganti tema. Pilihan disimpan di browser. Warna diatur di `app/globals.css` (variabel seperti `--ink` dan `--brand`) dan dipetakan di `tailwind.config.js`. Hero memakai warna tetap (`hero-*`) sehingga tidak ikut berbalik saat mode gelap.
