@@ -166,7 +166,7 @@ export default function OrderDetail({ code }) {
           <div className="space-y-2 rounded-2xl bg-paper p-3">
             <label htmlFor="cash-received" className="block font-semibold">Uang tunai diterima (Rp)</label>
             <div className="flex gap-2">
-              <input id="cash-received" className="field" inputMode="numeric" value={cashReceived} onChange={(e) => setCashReceived(e.target.value.replace(/\D/g, ''))} placeholder={String(o.total)} />
+              <input id="cash-received" type="text" className="field min-w-0 flex-1" inputMode="numeric" autoComplete="off" value={cashReceived} onChange={(e) => setCashReceived(e.target.value.replace(/[^\d]/g, ''))} placeholder={String(o.total)} />
               <button type="button" className="btn shrink-0" disabled={busy || !cashReceived} onClick={() => act({ cash_received: Number(cashReceived) }, 'Pembayaran tunai dicatat')}>Catat tunai</button>
             </div>
             <p className="text-xs text-ink-2">Total {rp(o.total)}. Kembalian dihitung otomatis.</p>

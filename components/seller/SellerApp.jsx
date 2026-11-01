@@ -46,6 +46,12 @@ export default function SellerApp() {
         </div>
         <div className="flex items-center gap-2">
           <a href="/" className="btn btn-ghost btn-sm">Lihat toko</a>
+          <a href="/kurir" className="btn btn-ghost btn-sm" aria-label="Buka halaman kurir" title="Halaman kurir">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 7h11v10H3z" /><path d="M14 10h4l3 3v4h-7z" /><circle cx="7" cy="19" r="2" /><circle cx="18" cy="19" r="2" />
+            </svg>
+            <span className="hidden sm:inline">Kurir</span>
+          </a>
           <ThemeToggle />
           <button className="btn btn-ghost btn-sm" onClick={logout}>Keluar</button>
         </div>
