@@ -241,8 +241,8 @@ export default function Shop({ menu, error, store: info, settings }) {
           ))}
         </main>
 
-        <aside className="card sticky top-4 hidden p-5 lg:block">
-          <h2 className="mb-3 text-lg font-bold">Pesanan kamu</h2>
+        <aside className="card sticky top-4 hidden max-h-[calc(100dvh-2rem)] flex-col p-5 lg:flex">
+          <h2 className="mb-3 shrink-0 text-lg font-bold">Pesanan kamu</h2>
           <CartPanel cart={cart} live={live} bump={bump} subtotal={subtotal} onCheckout={goCheckout} removeSold={removeSold} soldCount={soldLines.length} />
         </aside>
       </div>
@@ -267,7 +267,7 @@ export default function Shop({ menu, error, store: info, settings }) {
         <Overlay close={() => setShowCart(false)} label="Pesanan kamu">
           <div className="flex items-center justify-between p-5 pb-2"><h2 className="text-lg font-bold">Pesanan kamu</h2>
             <button onClick={() => setShowCart(false)} aria-label="Tutup" className="grid h-11 w-11 place-items-center rounded-full bg-paper text-2xl text-ink ring-1 ring-line">×</button></div>
-          <div className="overflow-y-auto p-5 pt-2" style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-5 pt-2" style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
             <CartPanel cart={cart} live={live} bump={bump} subtotal={subtotal} onCheckout={goCheckout} removeSold={removeSold} soldCount={soldLines.length} />
           </div>
         </Overlay>
@@ -383,16 +383,20 @@ function CartLines({ cart, live, bump }) {
 function CartPanel({ cart, live, bump, subtotal, onCheckout, removeSold, soldCount }) {
   if (!cart.length) return <p className="text-ink-2">Belum ada yang dipilih. Pilih menu, nanti muncul di sini.</p>;
   return (
-    <>
-      <CartLines cart={cart} live={live} bump={bump} />
-      {soldCount > 0 && (
-        <div role="alert" className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn-text">
-          {soldCount} menu di keranjang sedang habis. <button type="button" onClick={removeSold} className="font-bold underline">Hapus yang habis</button>
-        </div>
-      )}
-      <div className="mt-3 flex justify-between border-t border-dashed border-line pt-3"><span>Subtotal</span><b className="num">{rp(subtotal)}</b></div>
-      <button type="button" className="btn mt-4" disabled={subtotal <= 0} onClick={onCheckout}>Lanjut ke checkout</button>
-    </>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <CartLines cart={cart} live={live} bump={bump} />
+        {soldCount > 0 && (
+          <div role="alert" className="mt-3 rounded-xl bg-warn-soft p-3 text-sm text-warn-text">
+            {soldCount} menu di keranjang sedang habis. <button type="button" onClick={removeSold} className="font-bold underline">Hapus yang habis</button>
+          </div>
+        )}
+      </div>
+      <div className="shrink-0 border-t border-line pt-3">
+        <div className="flex justify-between"><span>Subtotal</span><b className="num">{rp(subtotal)}</b></div>
+        <button type="button" className="btn mt-4 w-full" disabled={subtotal <= 0} onClick={onCheckout}>Lanjut ke checkout</button>
+      </div>
+    </div>
   );
 }
 
