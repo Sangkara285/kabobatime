@@ -38,6 +38,7 @@ export default function OrderDetail({ code }) {
     if (!r.ok) { setErr(r.data.error || 'Pesanan tidak bisa dibuka.'); return; }
     setErr('');
     setO(r.data.order);
+    setCashReceived((current) => current || (r.data.order.cashAmount ? String(r.data.order.cashAmount) : ''));
   }, [code]);
 
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, [load]);
@@ -161,10 +162,11 @@ export default function OrderDetail({ code }) {
         {o.mode === 'antar' && (
           <div>
             <label htmlFor="courier" className="mb-1.5 block font-semibold">Kurir</label>
-            <select id="courier" className="field" value={o.courierId || ''} onChange={(e) => act({ courier_id: e.target.value }, 'Penugasan kurir disimpan')}>
+            <select id="courier" className="field" disabled={o.status === 'baru' || o.status === 'batal' || o.status === 'selesai' || busy} value={o.courierId || ''} onChange={(e) => act({ courier_id: e.target.value }, 'Penugasan kurir disimpan')}>
               <option value="">Belum ditugaskan</option>
               {couriers.filter((c) => c.active).map((c) => <option key={c.id} value={c.id}>{c.name} ({c.username})</option>)}
             </select>
+            {o.status === 'baru' && <p className="mt-1 text-sm text-ink-2">Terima pesanan dulu untuk memilih kurir.</p>}
           </div>
         )}
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -173,12 +175,15 @@ export default function OrderDetail({ code }) {
         </div>
 
         {!hasPay && <p className="text-ink-2">Dibayar tunai saat pesanan diterima. Tidak perlu bukti pembayaran.</p>}
+        {!hasPay && (o.cashAmount
+          ? <p className="rounded-xl bg-brand-soft p-3 font-semibold">Pembeli menyiapkan {rp(o.cashAmount)}. Kembalian {rp(Math.max(0, o.cashAmount - o.total))}.</p>
+          : <p className="rounded-xl bg-leaf-soft p-3 font-semibold text-leaf">Uang pas.</p>)}
         {!hasPay && !o.cashPaidAt && (
           <div className="space-y-2 rounded-2xl bg-paper p-3">
             <label htmlFor="cash-received" className="block font-semibold">Uang tunai diterima (Rp)</label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input id="cash-received" type="text" className="field min-w-0 flex-1" inputMode="numeric" autoComplete="off" value={cashReceived} onChange={(e) => setCashReceived(e.target.value.replace(/[^\d]/g, ''))} placeholder={String(o.total)} />
-              <button type="button" className="btn shrink-0" disabled={busy || !cashReceived} onClick={() => act({ cash_received: Number(cashReceived) }, 'Pembayaran tunai dicatat')}>Catat tunai</button>
+              <button type="button" className="btn w-full shrink-0 sm:w-auto" disabled={busy || !cashReceived} onClick={() => act({ cash_received: Number(cashReceived) }, 'Pembayaran tunai dicatat')}>Catat tunai</button>
             </div>
             <p className="text-xs text-ink-2">Total {rp(o.total)}. Kembalian dihitung otomatis.</p>
           </div>
