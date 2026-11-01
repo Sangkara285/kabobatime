@@ -3,6 +3,7 @@ import { isSeller } from '@/lib/auth';
 import { pool } from '@/lib/db';
 import { loadOrder } from '@/lib/orders';
 import { flat } from '@/lib/format';
+import { courierAssignmentError, sellerStatusError } from '@/lib/order-rules';
 
 export const dynamic = 'force-dynamic';
 const NO_STORE = { 'Cache-Control': 'no-store' };
@@ -26,8 +27,9 @@ export async function PATCH(req, { params }) {
     if (!o) return err('Pesanan tidak ditemukan.', 404);
 
     if (b.status !== undefined) {
-      if (b.status === 'diantar') return err('Status Sedang diantar hanya dapat diubah oleh kurir.', 400);
       if (!STATUSES.includes(b.status)) return err('Status tidak valid.', 400);
+      const statusError = sellerStatusError(o.mode, b.status);
+      if (statusError) return err(statusError.message, statusError.status);
       if (o.status === 'diantar') return err('Pesanan yang sedang diantar tidak dapat diubah statusnya oleh penjual.', 409);
       if (b.status === 'baru') {
         await pool().query('UPDATE orders SET status = ?, accepted_at = NULL, ready_at = NULL, shipped_at = NULL, completed_at = NULL, courier_id = NULL WHERE id = ?', [b.status, o.id]);
@@ -36,7 +38,6 @@ export async function PATCH(req, { params }) {
       } else if (b.status === 'siap') {
         await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = COALESCE(ready_at, NOW()), shipped_at = NULL, completed_at = NULL WHERE id = ?', [b.status, o.id]);
       } else if (b.status === 'selesai') {
-        if (o.mode === 'antar') return err('Pesanan antar diselesaikan oleh kurir.', 409);
         await pool().query('UPDATE orders SET status = ?, accepted_at = COALESCE(accepted_at, NOW()), ready_at = COALESCE(ready_at, NOW()), completed_at = COALESCE(completed_at, NOW()) WHERE id = ?', [b.status, o.id]);
       } else {
         await pool().query('UPDATE orders SET status = ?, completed_at = NULL WHERE id = ?', [b.status, o.id]);
@@ -63,7 +64,8 @@ export async function PATCH(req, { params }) {
     }
 
     if (b.courier_id !== undefined) {
-      if (!['diproses', 'siap'].includes(o.status)) return err('Terima pesanan dulu sebelum menugaskan kurir.', 400);
+      const assignmentError = courierAssignmentError(o.status);
+      if (assignmentError) return err(assignmentError.message, assignmentError.status);
       const courierId = b.courier_id === null || b.courier_id === '' ? null : Number(b.courier_id);
       if (courierId !== null && !Number.isInteger(courierId)) return err('Kurir tidak valid.', 400);
       if (courierId !== null) {

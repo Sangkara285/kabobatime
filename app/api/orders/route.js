@@ -4,6 +4,7 @@ import { flat } from '@/lib/format';
 import { getSettings } from '@/lib/settings';
 import { quote } from '@/lib/delivery';
 import { genCode, loadOrder, waUrl } from '@/lib/orders';
+import { cashAmountError } from '@/lib/order-rules';
 
 export const dynamic = 'force-dynamic';
 const bad = (msg, status = 400, extra = {}) => NextResponse.json({ error: msg, ...extra }, { status });
@@ -66,10 +67,8 @@ export async function POST(req) {
   const discount = Math.min(subtotal, Math.round(subtotal * (Number(settings.discount_percent) || 0) / 100));
   const total = subtotal - discount + fee;
   const rawCashAmount = b.cash_amount === undefined || b.cash_amount === null || b.cash_amount === '' ? null : Number(b.cash_amount);
-  if (payment !== 'Tunai' && rawCashAmount !== null) return bad('Uang yang disiapkan hanya berlaku untuk pembayaran Tunai.', 400);
-  if (payment === 'Tunai' && rawCashAmount !== null && (!Number.isSafeInteger(rawCashAmount) || rawCashAmount < total || (rawCashAmount !== total && rawCashAmount > 10000000))) {
-    return bad(`Uang tunai harus berupa angka bulat minimal ${total} dan maksimal 10000000.`, 400);
-  }
+  const cashError = cashAmountError(payment, rawCashAmount, total);
+  if (cashError) return bad(cashError, 400);
   const cashAmount = rawCashAmount === total ? null : rawCashAmount;
 
   const conn = await pool().getConnection();
